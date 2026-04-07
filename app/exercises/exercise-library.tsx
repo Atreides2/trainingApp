@@ -14,18 +14,29 @@ interface ExerciseLibraryProps {
 
 export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProps) {
   const [filter, setFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
 
-  const filtered = filter
-    ? exercises.filter(
-        (ex) =>
-          ex.primary_muscles.some((m) => m.id === filter) ||
-          ex.secondary_muscles.some((m) => m.id === filter)
-      )
-    : exercises;
+  const filtered = exercises.filter((ex) => {
+    const matchesMuscle = !filter ||
+      ex.primary_muscles.some((m) => m.id === filter) ||
+      ex.secondary_muscles.some((m) => m.id === filter);
+    const matchesSearch = !search ||
+      ex.name.toLowerCase().includes(search.toLowerCase());
+    return matchesMuscle && matchesSearch;
+  });
 
   return (
     <>
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search exercises…"
+        className="w-full h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-400 transition-colors"
+      />
+
       {/* Filter chips + Add button */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
