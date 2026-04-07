@@ -10,6 +10,7 @@ interface NumericInputProps {
   step?: number;
   className?: string;
   suffix?: string;
+  compact?: boolean;
 }
 
 export function NumericInput({
@@ -20,6 +21,7 @@ export function NumericInput({
   step = 1,
   suffix,
   className,
+  compact = false,
 }: NumericInputProps) {
   function decrement() {
     const current = value ?? 0;
@@ -38,7 +40,7 @@ export function NumericInput({
       <button
         type="button"
         onClick={decrement}
-        className="w-9 h-11 flex items-center justify-center text-gray-500 active:bg-gray-200 text-lg font-light select-none"
+        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-gray-200 text-lg font-light select-none', compact ? 'w-7' : 'w-9')}
       >
         −
       </button>
@@ -56,7 +58,7 @@ export function NumericInput({
         placeholder={placeholder}
         min={min}
         step={step}
-        className="flex-1 min-w-0 w-12 h-11 bg-transparent text-center text-gray-900 text-base focus:outline-none"
+        className="flex-1 min-w-0 w-10 h-11 bg-transparent text-center text-gray-900 text-base focus:outline-none"
       />
       {suffix && (
         <span className="text-xs text-gray-400 pr-1 select-none">{suffix}</span>
@@ -64,7 +66,7 @@ export function NumericInput({
       <button
         type="button"
         onClick={increment}
-        className="w-9 h-11 flex items-center justify-center text-gray-500 active:bg-gray-200 text-lg font-light select-none"
+        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-gray-200 text-lg font-light select-none', compact ? 'w-7' : 'w-9')}
       >
         +
       </button>

@@ -54,26 +54,16 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
         </span>
 
         {/* Weight stepper */}
-        {isBodyweight ? (
-          <NumericInput
-            value={weight}
-            onChange={setWeight}
-            placeholder="0"
-            min={0}
-            step={2.5}
-            suffix="kg"
-            className="flex-1"
-          />
-        ) : (
-          <NumericInput
-            value={weight}
-            onChange={setWeight}
-            min={0}
-            step={2.5}
-            suffix="kg"
-            className="flex-1"
-          />
-        )}
+        <NumericInput
+          value={weight}
+          onChange={setWeight}
+          placeholder="0"
+          min={0}
+          step={2.5}
+          suffix="kg"
+          compact
+          className="flex-1 min-w-[110px]"
+        />
 
         {/* Reps stepper */}
         <NumericInput
@@ -81,6 +71,8 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
           onChange={setReps}
           min={1}
           step={1}
+          compact
+          className="w-[82px]"
         />
 
         {/* Done / reopen */}
