@@ -6,6 +6,14 @@ export const metadata: Metadata = {
   title: 'Training App',
   description: 'Track your Push/Pull/Legs workouts',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Training',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
