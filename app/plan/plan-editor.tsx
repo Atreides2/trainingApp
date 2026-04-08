@@ -80,16 +80,16 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
       planned_weight: 0,
       exercise,
     };
-    updateOptimistic({ type: 'add', de: placeholder });
     startAdd(async () => {
+      updateOptimistic({ type: 'add', de: placeholder });
       await addDayExercise(dayId, exercise.id, 3, 10, 0);
     });
   }
 
   function handleSwapSelect(de: DayExercise, newExercise: SimilarExercise) {
     setSwapTargetDE(null);
-    updateOptimistic({ type: 'swap', id: de.id, newExercise });
     startAdd(async () => {
+      updateOptimistic({ type: 'swap', id: de.id, newExercise });
       await swapDayExercise(de.id, newExercise.id);
     });
   }
@@ -247,15 +247,15 @@ function PlanRow({
   const [isPending, startTransition] = useTransition();
 
   function handleChange(field: 'planned_sets' | 'planned_reps' | 'planned_weight', value: number) {
-    onUpdate({ [field]: value });
     startTransition(async () => {
+      onUpdate({ [field]: value });
       await updateDayExercise(de.id, { [field]: value });
     });
   }
 
   function handleRemove() {
-    onRemove();
     startTransition(async () => {
+      onRemove();
       await removeDayExercise(de.id);
     });
   }
