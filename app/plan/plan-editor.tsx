@@ -114,6 +114,9 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
 
   return (
     <div className="flex flex-col gap-8">
+      <p className="text-xs text-gray-400">
+        Tippe auf − / + oder gib eine Zahl ein. Änderungen werden automatisch gespeichert.
+      </p>
       {days.map((day) => {
         const exercises = optimisticDEs.filter((de) => de.training_day_id === day.id);
         const existingIds = exercises.map((de) => de.exercise_id);
@@ -135,14 +138,19 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
             </div>
             <Card className="p-0 overflow-hidden">
               {/* Table header */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100">
-                <span className="text-xs text-gray-400">Exercise</span>
-                <span className="text-xs text-gray-400 w-12 text-center">Sets</span>
-                <span className="text-xs text-gray-400 w-12 text-center">Reps</span>
-                <span className="text-xs text-gray-400 w-16 text-center">Weight</span>
+              <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100 bg-gray-50">
+                <span className="text-xs text-gray-400">Übung</span>
+                <span className="text-xs text-gray-400 w-12 text-center">Sätze</span>
+                <span className="text-xs text-gray-400 w-12 text-center">Wdh.</span>
+                <span className="text-xs text-gray-400 w-16 text-center">Gewicht</span>
                 <span className="w-6" />
                 <span className="w-6" />
               </div>
+              {exercises.length === 0 && (
+                <div className="px-4 py-4 text-sm text-gray-400 text-center">
+                  Noch keine Übungen – tippe auf „+ Add exercise"
+                </div>
+              )}
 
               {exercises.map((de) => (
                 <PlanRow
@@ -245,11 +253,14 @@ function PlanRow({
   onSwap: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [savedFlash, setSavedFlash] = useState(false);
 
   function handleChange(field: 'planned_sets' | 'planned_reps' | 'planned_weight', value: number) {
     startTransition(async () => {
       onUpdate({ [field]: value });
       await updateDayExercise(de.id, { [field]: value });
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1500);
     });
   }
 
@@ -261,9 +272,13 @@ function PlanRow({
   }
 
   return (
-    <div className={`border-b border-gray-100 last:border-0 ${isPending ? 'opacity-60' : ''}`}>
+    <div className={`border-b border-gray-100 last:border-0 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
       <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center px-4 py-2.5">
-        <span className="text-sm text-gray-900 truncate">{de.exercise?.name}</span>
+        <div className="min-w-0">
+          <span className="text-sm text-gray-900 truncate block">{de.exercise?.name}</span>
+          {isPending && <span className="text-xs text-gray-400">Speichern…</span>}
+          {!isPending && savedFlash && <span className="text-xs text-green-500">Gespeichert</span>}
+        </div>
         <NumericInput
           value={de.planned_sets}
           onChange={(v) => handleChange('planned_sets', v)}
