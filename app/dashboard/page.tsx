@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { startSession } from '@/app/session/[sessionId]/actions';
 import { formatDate } from '@/lib/utils';
-import type { TrainingDay, WorkoutSession } from '@/lib/types';
+import type { TrainingDay, WorkoutSession, DayExercise } from '@/lib/types';
 
 function suggestNextDay(recentSessions: WorkoutSession[], allDays: TrainingDay[]): TrainingDay {
   if (!recentSessions.length) return allDays[0];
@@ -19,11 +19,26 @@ function suggestNextDay(recentSessions: WorkoutSession[], allDays: TrainingDay[]
 export default async function DashboardPage() {
   const supabase = createServerClient();
 
+  // Load active plan
+  const { data: activePlan } = await supabase
+    .from('training_plans')
+    .select('id')
+    .eq('is_active', true)
+    .single();
+
+  const planFilter = activePlan ? { plan_id: activePlan.id } : null;
+
   const [{ data: days }, { data: recentSessions }, { data: activeSessions }] = await Promise.all([
-    supabase
-      .from('training_days')
-      .select('*')
-      .order('sort_order', { ascending: true }),
+    planFilter
+      ? supabase
+          .from('training_days')
+          .select('*')
+          .eq('plan_id', planFilter.plan_id)
+          .order('sort_order', { ascending: true })
+      : supabase
+          .from('training_days')
+          .select('*')
+          .order('sort_order', { ascending: true }),
     supabase
       .from('workout_sessions')
       .select('*, training_day:training_days(*)')
@@ -50,13 +65,17 @@ export default async function DashboardPage() {
   const todaysSuggestion = suggestNextDay(recentSessions ?? [], days);
   const activeSession = activeSessions?.[0] ?? null;
 
-  // Load exercise counts per day
-  const { data: dayCounts } = await supabase
+  // Load full exercises for preview (filter by days in active plan)
+  const dayIds = days.map((d) => d.id);
+  const { data: dayExercises } = await supabase
     .from('day_exercises')
-    .select('training_day_id');
+    .select('*, exercise:exercises(*)')
+    .in('training_day_id', dayIds)
+    .order('sort_order', { ascending: true });
 
-  const countByDay = (dayCounts ?? []).reduce<Record<string, number>>((acc, row) => {
-    acc[row.training_day_id] = (acc[row.training_day_id] ?? 0) + 1;
+  const exercisesByDay = (dayExercises ?? []).reduce<Record<string, DayExercise[]>>((acc, de) => {
+    if (!acc[de.training_day_id]) acc[de.training_day_id] = [];
+    acc[de.training_day_id].push(de as DayExercise);
     return acc;
   }, {});
 
@@ -76,7 +95,7 @@ export default async function DashboardPage() {
               <DayCard
                 key={day.id}
                 day={day}
-                exerciseCount={countByDay[day.id] ?? 0}
+                exercises={exercisesByDay[day.id] ?? []}
                 isToday={isToday}
                 resumeSessionId={resumeId}
                 onStart={startSession}

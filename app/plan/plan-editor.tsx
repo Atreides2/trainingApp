@@ -1,12 +1,20 @@
 'use client';
 
 import { useOptimistic, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { NumericInput } from '@/components/ui/numeric-input';
 import { ExercisePicker } from '@/components/exercise-picker';
 import { SwapPicker } from '@/components/swap-picker';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
-import { updateDayExercise, removeDayExercise, addDayExercise, swapDayExercise } from './actions';
+import {
+  updateDayExercise,
+  removeDayExercise,
+  addDayExercise,
+  swapDayExercise,
+  createDayForPlan,
+  deleteDay,
+} from './actions';
 import type { TrainingDay, DayExercise, Exercise, ExerciseWithMuscles, SimilarExercise } from '@/lib/types';
 
 const DAY_ACCENT: Record<string, string> = {
@@ -16,13 +24,15 @@ const DAY_ACCENT: Record<string, string> = {
 };
 
 interface PlanEditorProps {
+  planId: string;
   days: TrainingDay[];
   dayExercises: DayExercise[];
   allExercises: Exercise[];
   exercisesWithMuscles: ExerciseWithMuscles[];
 }
 
-export function PlanEditor({ days, dayExercises, allExercises, exercisesWithMuscles }: PlanEditorProps) {
+export function PlanEditor({ planId, days, dayExercises, allExercises, exercisesWithMuscles }: PlanEditorProps) {
+  const router = useRouter();
   const muscleMap = new Map(exercisesWithMuscles.map((ex) => [ex.id, ex]));
 
   const [optimisticDEs, updateOptimistic] = useOptimistic(
@@ -53,6 +63,11 @@ export function PlanEditor({ days, dayExercises, allExercises, exercisesWithMusc
   const [swapTargetDE, setSwapTargetDE] = useState<DayExercise | null>(null);
   const [isAdding, startAdd] = useTransition();
 
+  // New day creation
+  const [showNewDay, setShowNewDay] = useState(false);
+  const [newDayName, setNewDayName] = useState('');
+  const [isCreatingDay, startCreateDay] = useTransition();
+
   function handlePickerSelect(dayId: string, exercise: Exercise) {
     setPickerDayId(null);
     const placeholder: DayExercise = {
@@ -79,6 +94,24 @@ export function PlanEditor({ days, dayExercises, allExercises, exercisesWithMusc
     });
   }
 
+  function handleCreateDay() {
+    const trimmed = newDayName.trim();
+    if (!trimmed) return;
+    startCreateDay(async () => {
+      await createDayForPlan(planId, trimmed);
+      setNewDayName('');
+      setShowNewDay(false);
+      router.refresh();
+    });
+  }
+
+  function handleDeleteDay(dayId: string) {
+    startCreateDay(async () => {
+      await deleteDay(dayId);
+      router.refresh();
+    });
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {days.map((day) => {
@@ -87,9 +120,19 @@ export function PlanEditor({ days, dayExercises, allExercises, exercisesWithMusc
 
         return (
           <section key={day.id}>
-            <h2 className={`text-sm font-semibold uppercase tracking-wider mb-3 ${DAY_ACCENT[day.name] ?? 'text-gray-400'}`}>
-              {day.name}
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className={`text-sm font-semibold uppercase tracking-wider ${DAY_ACCENT[day.name] ?? 'text-gray-400'}`}>
+                {day.name}
+              </h2>
+              <button
+                onClick={() => handleDeleteDay(day.id)}
+                disabled={isCreatingDay}
+                className="text-xs text-red-400 disabled:opacity-50"
+                title="Tag löschen"
+              >
+                Tag löschen
+              </button>
+            </div>
             <Card className="p-0 overflow-hidden">
               {/* Table header */}
               <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100">
@@ -145,6 +188,45 @@ export function PlanEditor({ days, dayExercises, allExercises, exercisesWithMusc
           </section>
         );
       })}
+
+      {/* Add new day */}
+      {showNewDay ? (
+        <div className="flex gap-2">
+          <input
+            autoFocus
+            type="text"
+            value={newDayName}
+            onChange={(e) => setNewDayName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreateDay();
+              if (e.key === 'Escape') { setShowNewDay(false); setNewDayName(''); }
+            }}
+            placeholder="Tag-Name (z.B. Ganzkörper A)…"
+            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/30"
+          />
+          <button
+            onClick={handleCreateDay}
+            disabled={isCreatingDay || !newDayName.trim()}
+            className="text-sm text-blue-600 disabled:opacity-50 px-3"
+          >
+            Erstellen
+          </button>
+          <button
+            onClick={() => { setShowNewDay(false); setNewDayName(''); }}
+            className="text-sm text-gray-400 px-3"
+          >
+            Abbrechen
+          </button>
+        </div>
+      ) : (
+        <button
+          onClick={() => setShowNewDay(true)}
+          disabled={isCreatingDay}
+          className="text-sm text-blue-600 text-left py-1 disabled:opacity-50"
+        >
+          + Tag hinzufügen
+        </button>
+      )}
     </div>
   );
 }

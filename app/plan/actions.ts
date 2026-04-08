@@ -2,6 +2,64 @@
 
 import { createServerClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import type { TrainingPlan, TrainingDay } from '@/lib/types';
+
+export async function createPlan(name: string): Promise<TrainingPlan> {
+  const supabase = createServerClient();
+  const { data, error } = await supabase
+    .from('training_plans')
+    .insert({ name, is_active: false })
+    .select()
+    .single();
+  if (error || !data) throw new Error(`Failed to create plan: ${error?.message}`);
+  revalidatePath('/plan');
+  return data as TrainingPlan;
+}
+
+export async function setActivePlan(planId: string): Promise<void> {
+  const supabase = createServerClient();
+  await supabase.from('training_plans').update({ is_active: false }).neq('id', planId);
+  const { error } = await supabase.from('training_plans').update({ is_active: true }).eq('id', planId);
+  if (error) throw new Error(`Failed to set active plan: ${error.message}`);
+  revalidatePath('/plan');
+  revalidatePath('/dashboard');
+}
+
+export async function deletePlan(planId: string): Promise<void> {
+  const supabase = createServerClient();
+  const { error } = await supabase.from('training_plans').delete().eq('id', planId);
+  if (error) throw new Error(`Failed to delete plan: ${error.message}`);
+  revalidatePath('/plan');
+  revalidatePath('/dashboard');
+}
+
+export async function createDayForPlan(planId: string, name: string): Promise<TrainingDay> {
+  const supabase = createServerClient();
+  const { data: existing } = await supabase
+    .from('training_days')
+    .select('sort_order')
+    .eq('plan_id', planId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .single();
+  const sortOrder = existing ? existing.sort_order + 1 : 1;
+  const { data, error } = await supabase
+    .from('training_days')
+    .insert({ plan_id: planId, name, sort_order: sortOrder })
+    .select()
+    .single();
+  if (error || !data) throw new Error(`Failed to create day: ${error?.message}`);
+  revalidatePath('/plan');
+  return data as TrainingDay;
+}
+
+export async function deleteDay(dayId: string): Promise<void> {
+  const supabase = createServerClient();
+  const { error } = await supabase.from('training_days').delete().eq('id', dayId);
+  if (error) throw new Error(`Failed to delete day: ${error.message}`);
+  revalidatePath('/plan');
+}
 
 export async function updateDayExercise(
   id: string,

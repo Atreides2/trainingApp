@@ -5,8 +5,16 @@ export interface Exercise {
   is_bodyweight: boolean;
 }
 
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface TrainingDay {
   id: string;
+  plan_id: string;
   name: string;
   sort_order: number;
 }
