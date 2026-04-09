@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { createExercise, updateExerciseMuscles } from './actions';
+import { createExercise, updateExercise } from './actions';
 import type { ExerciseWithMuscles, MuscleGroup } from '@/lib/types';
 
 interface ExerciseFormProps {
@@ -71,7 +71,7 @@ export function ExerciseForm({ muscleGroups, exercise, onClose }: ExerciseFormPr
     setError(null);
     startTransition(async () => {
       if (isEdit) {
-        await updateExerciseMuscles(exercise.id, Array.from(primaryIds), Array.from(secondaryIds));
+        await updateExercise(exercise.id, isBodyweight, Array.from(primaryIds), Array.from(secondaryIds));
       } else {
         await createExercise(name.trim(), isBodyweight, Array.from(primaryIds), Array.from(secondaryIds));
       }
@@ -108,20 +108,18 @@ export function ExerciseForm({ muscleGroups, exercise, onClose }: ExerciseFormPr
             </div>
           )}
 
-          {/* Bodyweight toggle (only in create mode) */}
-          {!isEdit && (
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700">Bodyweight exercise</span>
-              <button
-                onClick={() => setIsBodyweight((v) => !v)}
-                className={`w-12 h-7 rounded-full transition-colors ${isBodyweight ? 'bg-blue-600' : 'bg-gray-200'}`}
-              >
-                <span
-                  className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-1 ${isBodyweight ? 'translate-x-5' : 'translate-x-0'}`}
-                />
-              </button>
-            </div>
-          )}
+          {/* Bodyweight toggle */}
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-700">Eigengewichtsübung</span>
+            <button
+              onClick={() => setIsBodyweight((v) => !v)}
+              className={`w-12 h-7 rounded-full transition-colors ${isBodyweight ? 'bg-blue-600' : 'bg-gray-200'}`}
+            >
+              <span
+                className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-1 ${isBodyweight ? 'translate-x-5' : 'translate-x-0'}`}
+              />
+            </button>
+          </div>
 
           {/* Primary muscles */}
           <div className="flex flex-col gap-2">

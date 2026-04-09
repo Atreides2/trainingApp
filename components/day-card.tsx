@@ -74,7 +74,9 @@ export function DayCard({ day, exercises, isToday, resumeSessionId, onStart }: D
               <span className="text-gray-700">{de.exercise.name}</span>
               <span className="text-gray-400 text-xs">
                 {de.planned_sets}×{de.planned_reps}
-                {de.exercise.is_bodyweight ? ' BW' : ` @ ${de.planned_weight}kg`}
+                {de.exercise.is_bodyweight
+                  ? de.planned_weight > 0 ? ` BW +${de.planned_weight}kg` : ' BW'
+                  : ` @ ${de.planned_weight}kg`}
               </span>
             </div>
           ))}

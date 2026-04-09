@@ -317,7 +317,7 @@ function PlanRow({
             onChange={(v) => handleChange('planned_weight', v)}
             min={0}
             step={2.5}
-            suffix="kg"
+            suffix={de.exercise.is_bodyweight ? '+kg' : 'kg'}
             compact
             className="w-full"
           />

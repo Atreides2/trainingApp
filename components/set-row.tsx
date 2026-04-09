@@ -60,7 +60,7 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
           placeholder="0"
           min={0}
           step={2.5}
-          suffix="kg"
+          suffix={isBodyweight ? '+kg' : 'kg'}
           compact
           className="flex-1 min-w-[110px]"
         />
@@ -109,7 +109,7 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
       {/* Bodyweight hint */}
       {isBodyweight && weight === null && (
         <p className="mt-1.5 text-xs text-gray-400 pl-7">
-          Enter added weight (0 = bodyweight only)
+          0 = nur Eigengewicht · Zahl = Zusatzgewicht (kg)
         </p>
       )}
     </div>

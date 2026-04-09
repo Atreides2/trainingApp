@@ -161,6 +161,36 @@ export async function createExercise(
   return exercise as Exercise;
 }
 
+export async function updateExercise(
+  exerciseId: string,
+  isBodyweight: boolean,
+  primaryIds: string[],
+  secondaryIds: string[]
+): Promise<void> {
+  const supabase = createServerClient();
+
+  const { error: exError } = await supabase
+    .from('exercises')
+    .update({ is_bodyweight: isBodyweight })
+    .eq('id', exerciseId);
+  if (exError) throw new Error(`Failed to update exercise: ${exError.message}`);
+
+  await supabase.from('exercise_muscle_groups').delete().eq('exercise_id', exerciseId);
+
+  const muscleRows = [
+    ...primaryIds.map((id) => ({ exercise_id: exerciseId, muscle_group_id: id, is_primary: true })),
+    ...secondaryIds.map((id) => ({ exercise_id: exerciseId, muscle_group_id: id, is_primary: false })),
+  ];
+
+  if (muscleRows.length > 0) {
+    const { error } = await supabase.from('exercise_muscle_groups').insert(muscleRows);
+    if (error) throw new Error(`Failed to update muscles: ${error.message}`);
+  }
+
+  revalidatePath('/exercises');
+  revalidatePath(`/exercise/${exerciseId}`);
+}
+
 export async function updateExerciseMuscles(
   exerciseId: string,
   primaryIds: string[],
