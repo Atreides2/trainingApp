@@ -108,16 +108,19 @@ export default function SessionPage({ params }: Props) {
       const tdId = raw.training_day?.id ?? '';
       const dName = raw.training_day?.name ?? 'Workout';
 
-      // Load day_exercises for dayExerciseMap (exercise_id → day_exercise id)
+      // Load day_exercises for dayExerciseMap (exercise_id → day_exercise id) + sort order
       let deMap: Record<string, string> = {};
+      const sortOrderMap: Record<string, number> = {};
       if (tdId) {
         const { data: des } = await supabase
           .from('day_exercises')
-          .select('id, exercise_id')
-          .eq('training_day_id', tdId) as { data: { id: string; exercise_id: string }[] | null; error: unknown };
+          .select('id, exercise_id, sort_order')
+          .eq('training_day_id', tdId)
+          .order('sort_order', { ascending: true }) as { data: { id: string; exercise_id: string; sort_order: number }[] | null; error: unknown };
         if (des) {
           for (const de of des) {
             deMap[de.exercise_id] = de.id;
+            sortOrderMap[de.exercise_id] = de.sort_order;
           }
         }
       }
@@ -141,7 +144,13 @@ export default function SessionPage({ params }: Props) {
         }
       }
 
-      init(sessionId, tdId, dName, Array.from(exerciseMap.values()), deMap);
+      const sortedExercises = Array.from(exerciseMap.values()).sort((a, b) => {
+        const ao = sortOrderMap[a.exercise_id] ?? 999;
+        const bo = sortOrderMap[b.exercise_id] ?? 999;
+        return ao - bo;
+      });
+
+      init(sessionId, tdId, dName, sortedExercises, deMap);
     }
 
     loadSession();
