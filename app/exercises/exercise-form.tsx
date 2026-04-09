@@ -93,7 +93,7 @@ export function ExerciseForm({ muscleGroups, exercise, onClose }: ExerciseFormPr
           <button onClick={onClose} className="text-gray-400 active:text-gray-600 text-xl leading-none">×</button>
         </div>
 
-        <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-5 pb-8">
+        <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-5 pb-24">
           {/* Name (only editable in create mode) */}
           {!isEdit && (
             <div className="flex flex-col gap-1.5">
