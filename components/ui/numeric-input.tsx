@@ -59,6 +59,7 @@ export function NumericInput({
         min={min}
         step={step}
         className="flex-1 min-w-0 w-10 h-11 bg-transparent text-center text-gray-900 text-base focus:outline-none"
+        suppressHydrationWarning
       />
       {suffix && (
         <span className="text-xs text-gray-400 pr-1 select-none">{suffix}</span>

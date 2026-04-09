@@ -141,7 +141,7 @@ async function RecentSessionRow({ session }: { session: WorkoutSession }) {
       </div>
       {totalVolume > 0 && (
         <span className="text-xs text-gray-500">
-          {totalVolume.toLocaleString()} kg·reps
+          {totalVolume.toLocaleString('en-US')} kg·reps
         </span>
       )}
     </Card>

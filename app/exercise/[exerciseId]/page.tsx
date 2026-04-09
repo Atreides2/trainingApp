@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
-import { VolumeChart } from '@/components/volume-chart';
+import { VolumeChartClient } from '@/components/volume-chart-client';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
@@ -97,7 +97,7 @@ export default async function ExercisePage({ params }: Props) {
       <Card>
         <h2 className="text-sm font-semibold text-gray-500 mb-4">Total Volume</h2>
         <Suspense fallback={<Skeleton className="h-52" />}>
-          <VolumeChart
+          <VolumeChartClient
             data={(volumeData ?? []).map((d) => ({
               date: d.date,
               total_volume: Number(d.total_volume),

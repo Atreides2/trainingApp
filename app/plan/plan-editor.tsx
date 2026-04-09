@@ -140,9 +140,9 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
               {/* Table header */}
               <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100 bg-gray-50">
                 <span className="text-xs text-gray-400">Übung</span>
-                <span className="text-xs text-gray-400 w-12 text-center">Sätze</span>
-                <span className="text-xs text-gray-400 w-12 text-center">Wdh.</span>
-                <span className="text-xs text-gray-400 w-16 text-center">Gewicht</span>
+                <span className="text-xs text-gray-400 w-[82px] text-center">Sätze</span>
+                <span className="text-xs text-gray-400 w-[82px] text-center">Wdh.</span>
+                <span className="text-xs text-gray-400 w-[96px] text-center">Gewicht</span>
                 <span className="w-6" />
                 <span className="w-6" />
               </div>
@@ -273,7 +273,7 @@ function PlanRow({
 
   return (
     <div className={`border-b border-gray-100 last:border-0 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
-      <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-center px-4 py-2.5">
+      <div className="grid grid-cols-[1fr_82px_82px_96px_auto_auto] gap-3 items-center px-4 py-2.5">
         <div className="min-w-0">
           <span className="text-sm text-gray-900 truncate block">{de.exercise?.name}</span>
           {isPending && <span className="text-xs text-gray-400">Speichern…</span>}
@@ -283,13 +283,15 @@ function PlanRow({
           value={de.planned_sets}
           onChange={(v) => handleChange('planned_sets', v)}
           min={1}
-          className="w-12"
+          compact
+          className="w-[82px]"
         />
         <NumericInput
           value={de.planned_reps}
           onChange={(v) => handleChange('planned_reps', v)}
           min={1}
-          className="w-12"
+          compact
+          className="w-[82px]"
         />
         <NumericInput
           value={de.planned_weight}
@@ -297,7 +299,8 @@ function PlanRow({
           min={0}
           step={2.5}
           suffix="kg"
-          className="w-16"
+          compact
+          className="w-[96px]"
         />
         <button
           onClick={onSwap}
