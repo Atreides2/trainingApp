@@ -48,6 +48,15 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
       )}
     >
       <div className="flex items-center gap-2">
+        {/* Remove button */}
+        <button
+          onClick={handleRemove}
+          disabled={isPending}
+          className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-400 active:bg-red-200 disabled:opacity-50 shrink-0 text-lg leading-none"
+        >
+          −
+        </button>
+
         {/* Set number */}
         <span className="text-sm text-gray-400 w-5 text-center shrink-0 font-medium">
           {set.set_number}
@@ -62,7 +71,7 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
           step={2.5}
           suffix={isBodyweight ? '+kg' : 'kg'}
           compact
-          className="flex-1 min-w-[110px]"
+          className="flex-1 min-w-[90px]"
         />
 
         {/* Reps stepper */}
@@ -94,24 +103,6 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
           </button>
         )}
       </div>
-
-      {/* Remove row for user-added sets */}
-      {!set.is_planned && (
-        <button
-          onClick={handleRemove}
-          disabled={isPending}
-          className="mt-2 w-full text-xs text-gray-400 active:text-red-500 py-1 disabled:opacity-50"
-        >
-          Remove set
-        </button>
-      )}
-
-      {/* Bodyweight hint */}
-      {isBodyweight && weight === null && (
-        <p className="mt-1.5 text-xs text-gray-400 pl-7">
-          0 = nur Eigengewicht · Zahl = Zusatzgewicht (kg)
-        </p>
-      )}
     </div>
   );
 }

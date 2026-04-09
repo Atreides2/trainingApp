@@ -62,6 +62,13 @@ export function ExerciseCard({
         </span>
       </div>
 
+      {/* Bodyweight hint — shown once */}
+      {exercise.is_bodyweight && (
+        <p className="text-xs text-gray-400 -mt-1">
+          0 = nur Eigengewicht · Zahl = Zusatzgewicht (kg)
+        </p>
+      )}
+
       {/* Sets */}
       <div className="flex flex-col gap-2">
         {exercise.sets.map((set) => (
