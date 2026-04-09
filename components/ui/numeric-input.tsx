@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface NumericInputProps {
@@ -23,6 +24,13 @@ export function NumericInput({
   className,
   compact = false,
 }: NumericInputProps) {
+  const [inputValue, setInputValue] = useState(value != null ? String(value) : '');
+
+  // Sync when the value changes externally (e.g. stepper buttons, optimistic updates)
+  useEffect(() => {
+    setInputValue(value != null ? String(value) : '');
+  }, [value]);
+
   function decrement() {
     const current = value ?? 0;
     const next = Math.max(min, parseFloat((current - step).toFixed(4)));
@@ -47,13 +55,18 @@ export function NumericInput({
       <input
         type="number"
         inputMode="decimal"
-        value={value ?? ''}
+        value={inputValue}
         onChange={(e) => {
+          setInputValue(e.target.value);
           const n = parseFloat(e.target.value);
           if (!isNaN(n)) onChange(n);
         }}
-        onBlur={(e) => {
-          if (e.target.value === '') onChange(min);
+        onBlur={() => {
+          const n = parseFloat(inputValue);
+          if (isNaN(n)) {
+            onChange(min);
+            setInputValue(String(min));
+          }
         }}
         placeholder={placeholder}
         min={min}
