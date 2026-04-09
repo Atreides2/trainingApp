@@ -9,6 +9,7 @@ import { VolumeChartClient } from '@/components/volume-chart-client';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
+import { EditExerciseButton } from './edit-button';
 import { formatDate } from '@/lib/utils';
 import type { MuscleGroup } from '@/lib/types';
 
@@ -36,7 +37,7 @@ export default async function ExercisePage({ params }: Props) {
     muscle_groups: { id: string; name: string; slug: string };
   };
 
-  const [exerciseResult, volumeResult, recentSetsResult, muscleResult] = await Promise.all([
+  const [exerciseResult, volumeResult, recentSetsResult, muscleResult, allMuscleGroupsResult] = await Promise.all([
     supabase.from('exercises').select('*').eq('id', exerciseId).single(),
     supabase
       .from('exercise_volume')
@@ -54,17 +55,25 @@ export default async function ExercisePage({ params }: Props) {
       .from('exercise_muscle_groups')
       .select('muscle_group_id, is_primary, muscle_groups(id, name, slug)')
       .eq('exercise_id', exerciseId),
+    supabase.from('muscle_groups').select('*').order('name'),
   ]);
 
   const exercise = exerciseResult.data as ExerciseRow | null;
   const volumeData = volumeResult.data as VolumeRow[] | null;
   const recentSets = recentSetsResult.data as RecentSetRow[] | null;
   const muscleRows = (muscleResult.data ?? []) as unknown as MuscleRow[];
+  const allMuscleGroups = (allMuscleGroupsResult.data ?? []) as MuscleGroup[];
 
   const primaryMuscles = muscleRows.filter((r) => r.is_primary).map((r) => r.muscle_groups);
   const secondaryMuscles = muscleRows.filter((r) => !r.is_primary).map((r) => r.muscle_groups);
 
   if (!exercise) notFound();
+
+  const exerciseWithMuscles = {
+    ...exercise,
+    primary_muscles: primaryMuscles as MuscleGroup[],
+    secondary_muscles: secondaryMuscles as MuscleGroup[],
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -83,14 +92,17 @@ export default async function ExercisePage({ params }: Props) {
             />
           )}
         </div>
-        <a
-          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + ' form tutorial')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-medium active:bg-red-100 transition-colors"
-        >
-          ▶ YouTube
-        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <EditExerciseButton exercise={exerciseWithMuscles} muscleGroups={allMuscleGroups} />
+          <a
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.name + ' form tutorial')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-xs font-medium active:bg-red-100 transition-colors"
+          >
+            ▶ YouTube
+          </a>
+        </div>
       </div>
 
       {/* Volume chart */}
