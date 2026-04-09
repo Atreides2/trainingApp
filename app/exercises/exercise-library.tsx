@@ -37,7 +37,18 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
         className="w-full h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-400 transition-colors"
       />
 
-      {/* Filter chips + Add button */}
+      {/* Header row */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-xs text-gray-500 uppercase tracking-wider">Übungen</h2>
+        <button
+          onClick={() => setShowForm(true)}
+          className="text-sm text-blue-600 font-medium active:text-blue-700"
+        >
+          + Neue Übung
+        </button>
+      </div>
+
+      {/* Filter chips */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
           onClick={() => setFilter(null)}
@@ -58,12 +69,6 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
             {mg.name}
           </button>
         ))}
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex-shrink-0 ml-auto px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 active:bg-blue-100 transition-colors"
-        >
-          + Add
-        </button>
       </div>
 
       {/* Exercise list */}

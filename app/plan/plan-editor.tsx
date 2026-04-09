@@ -137,15 +137,6 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
               </button>
             </div>
             <Card className="p-0 overflow-hidden">
-              {/* Table header */}
-              <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 px-4 py-2 border-b border-gray-100 bg-gray-50">
-                <span className="text-xs text-gray-400">Übung</span>
-                <span className="text-xs text-gray-400 w-[82px] text-center">Sätze</span>
-                <span className="text-xs text-gray-400 w-[82px] text-center">Wdh.</span>
-                <span className="text-xs text-gray-400 w-[96px] text-center">Gewicht</span>
-                <span className="w-6" />
-                <span className="w-6" />
-              </div>
               {exercises.length === 0 && (
                 <div className="px-4 py-4 text-sm text-gray-400 text-center">
                   Noch keine Übungen – tippe auf „+ Add exercise"
@@ -273,39 +264,17 @@ function PlanRow({
 
   return (
     <div className={`border-b border-gray-100 last:border-0 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
-      <div className="grid grid-cols-[1fr_82px_82px_96px_auto_auto] gap-3 items-center px-4 py-2.5">
-        <div className="min-w-0">
+      {/* Row 1: exercise name + action buttons */}
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+        <div className="flex-1 min-w-0">
           <span className="text-sm text-gray-900 truncate block">{de.exercise?.name}</span>
           {isPending && <span className="text-xs text-gray-400">Speichern…</span>}
           {!isPending && savedFlash && <span className="text-xs text-green-500">Gespeichert</span>}
         </div>
-        <NumericInput
-          value={de.planned_sets}
-          onChange={(v) => handleChange('planned_sets', v)}
-          min={1}
-          compact
-          className="w-[82px]"
-        />
-        <NumericInput
-          value={de.planned_reps}
-          onChange={(v) => handleChange('planned_reps', v)}
-          min={1}
-          compact
-          className="w-[82px]"
-        />
-        <NumericInput
-          value={de.planned_weight}
-          onChange={(v) => handleChange('planned_weight', v)}
-          min={0}
-          step={2.5}
-          suffix="kg"
-          compact
-          className="w-[96px]"
-        />
         <button
           onClick={onSwap}
           disabled={isPending}
-          className="w-6 h-6 text-gray-400 active:text-blue-500 transition-colors text-base leading-none disabled:opacity-50"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-base disabled:opacity-50"
           title="Swap exercise"
         >
           ⇄
@@ -313,11 +282,46 @@ function PlanRow({
         <button
           onClick={handleRemove}
           disabled={isPending}
-          className="w-6 h-6 text-gray-400 active:text-red-500 transition-colors text-lg leading-none disabled:opacity-50"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-red-500 transition-colors text-lg disabled:opacity-50"
           title="Remove exercise from day"
         >
           ×
         </button>
+      </div>
+      {/* Row 2: labeled numeric inputs */}
+      <div className="flex gap-2 px-4 pb-3">
+        <div className="flex-1 flex flex-col gap-0.5">
+          <span className="text-[10px] text-gray-400 text-center">Sätze</span>
+          <NumericInput
+            value={de.planned_sets}
+            onChange={(v) => handleChange('planned_sets', v)}
+            min={1}
+            compact
+            className="w-full"
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-0.5">
+          <span className="text-[10px] text-gray-400 text-center">Wdh.</span>
+          <NumericInput
+            value={de.planned_reps}
+            onChange={(v) => handleChange('planned_reps', v)}
+            min={1}
+            compact
+            className="w-full"
+          />
+        </div>
+        <div className="flex-1 flex flex-col gap-0.5">
+          <span className="text-[10px] text-gray-400 text-center">Gewicht</span>
+          <NumericInput
+            value={de.planned_weight}
+            onChange={(v) => handleChange('planned_weight', v)}
+            min={0}
+            step={2.5}
+            suffix="kg"
+            compact
+            className="w-full"
+          />
+        </div>
       </div>
       {primaryMuscles.length > 0 && (
         <div className="px-4 pb-2">
