@@ -7,6 +7,7 @@ import { ExerciseCard } from '@/components/exercise-card';
 import { ExercisePicker } from '@/components/exercise-picker';
 import { SwapPicker } from '@/components/swap-picker';
 import { ScopeDialog } from '@/components/scope-dialog';
+import { RestTimer } from '@/components/rest-timer';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -49,6 +50,7 @@ export default function SessionPage({ params }: Props) {
   const router = useRouter();
   const [isFinishing, startFinish] = useTransition();
   const [isCancelling, startCancel] = useTransition();
+  const [restUntil, setRestUntil] = useState<number | null>(null);
 
   // Exercise picker + scope dialog state
   const [allExercises, setAllExercises] = useState<Exercise[]>([]);
@@ -170,6 +172,7 @@ export default function SessionPage({ params }: Props) {
   async function handleComplete(setId: string, weight: number, reps: number) {
     await markSetComplete(setId, weight, reps);
     markSetDone(setId, weight, reps);
+    setRestUntil(Date.now() + 90_000);
   }
 
   async function handleReopen(setId: string) {
@@ -403,6 +406,11 @@ export default function SessionPage({ params }: Props) {
           + Add exercise
         </button>
       </div>
+
+      {/* Rest timer */}
+      {restUntil !== null && (
+        <RestTimer until={restUntil} onDone={() => setRestUntil(null)} />
+      )}
 
       {/* Sticky finish button */}
       <div

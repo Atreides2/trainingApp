@@ -17,7 +17,7 @@ export async function startSession(trainingDayId: string): Promise<string> {
     throw new Error(`Failed to create session: ${sessionError?.message}`);
   }
 
-  // 2. Load the day's template exercises
+  // 2. Load the day's template exercises (order + fallback values)
   const { data: dayExercises, error: deError } = await supabase
     .from('day_exercises')
     .select('exercise_id, planned_sets, planned_reps, planned_weight')
@@ -28,7 +28,35 @@ export async function startSession(trainingDayId: string): Promise<string> {
     throw new Error(`Failed to load day exercises: ${deError?.message}`);
   }
 
-  // 3. Expand each exercise into N set rows
+  // 3. Look up last completed session for this training day
+  const { data: lastSession } = await supabase
+    .from('workout_sessions')
+    .select('id')
+    .eq('training_day_id', trainingDayId)
+    .eq('status', 'done')
+    .order('completed_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  // 4. If found, load its completed sets grouped by exercise
+  type PrevSet = { exercise_id: string; set_number: number; actual_weight: number | null; actual_reps: number | null };
+  const prevByExercise = new Map<string, PrevSet[]>();
+
+  if (lastSession) {
+    const { data: prevSets } = await supabase
+      .from('session_sets')
+      .select('exercise_id, set_number, actual_weight, actual_reps')
+      .eq('session_id', lastSession.id)
+      .eq('completed', true)
+      .order('set_number', { ascending: true });
+
+    for (const s of prevSets ?? []) {
+      if (!prevByExercise.has(s.exercise_id)) prevByExercise.set(s.exercise_id, []);
+      prevByExercise.get(s.exercise_id)!.push(s as PrevSet);
+    }
+  }
+
+  // 5. Expand each exercise into set rows — prefer last session, fall back to template
   const setsToInsert: {
     session_id: string;
     exercise_id: string;
@@ -39,15 +67,32 @@ export async function startSession(trainingDayId: string): Promise<string> {
   }[] = [];
 
   for (const de of dayExercises) {
-    for (let i = 1; i <= de.planned_sets; i++) {
-      setsToInsert.push({
-        session_id: session.id,
-        exercise_id: de.exercise_id,
-        set_number: i,
-        planned_reps: de.planned_reps,
-        planned_weight: de.planned_weight,
-        is_planned: true,
-      });
+    const prev = prevByExercise.get(de.exercise_id);
+
+    if (prev && prev.length > 0) {
+      // Use exact sets from last session
+      for (let i = 0; i < prev.length; i++) {
+        setsToInsert.push({
+          session_id: session.id,
+          exercise_id: de.exercise_id,
+          set_number: i + 1,
+          planned_reps: prev[i].actual_reps ?? de.planned_reps,
+          planned_weight: prev[i].actual_weight ?? de.planned_weight,
+          is_planned: true,
+        });
+      }
+    } else {
+      // First time: fall back to template defaults
+      for (let i = 1; i <= de.planned_sets; i++) {
+        setsToInsert.push({
+          session_id: session.id,
+          exercise_id: de.exercise_id,
+          set_number: i,
+          planned_reps: de.planned_reps,
+          planned_weight: de.planned_weight,
+          is_planned: true,
+        });
+      }
     }
   }
 
@@ -125,8 +170,7 @@ export async function removeSet(setId: string): Promise<void> {
   const { error } = await supabase
     .from('session_sets')
     .delete()
-    .eq('id', setId)
-    .eq('is_planned', false); // safety: only allow removing user-added sets
+    .eq('id', setId);
 
   if (error) throw new Error(`Failed to remove set: ${error.message}`);
 }

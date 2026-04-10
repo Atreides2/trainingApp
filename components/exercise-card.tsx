@@ -57,9 +57,19 @@ export function ExerciseCard({
             <MuscleGroupTags primary={primaryMuscles} size="xs" />
           )}
         </div>
-        <span className={cn('text-xs font-medium ml-3 flex-shrink-0', allDone ? 'text-green-600' : 'text-gray-400')}>
-          {completedCount}/{totalCount}
-        </span>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+          <a
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.exercise_name + ' form tutorial')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-500 text-xs font-medium active:bg-red-100 transition-colors"
+          >
+            ▶
+          </a>
+          <span className={cn('text-xs font-medium', allDone ? 'text-green-600' : 'text-gray-400')}>
+            {completedCount}/{totalCount}
+          </span>
+        </div>
       </div>
 
       {/* Bodyweight hint — shown once */}

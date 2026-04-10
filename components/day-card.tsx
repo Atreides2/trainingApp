@@ -43,7 +43,7 @@ export function DayCard({ day, exercises, isToday, resumeSessionId, onStart }: D
     <Card
       className={cn(
         'py-3 cursor-pointer select-none',
-        isToday && 'ring-2 ring-blue-500/30'
+        resumeSessionId ? 'ring-2 ring-green-400/60' : isToday && 'ring-2 ring-blue-500/30'
       )}
       onClick={() => setExpanded((v) => !v)}
     >
@@ -55,7 +55,9 @@ export function DayCard({ day, exercises, isToday, resumeSessionId, onStart }: D
           <span className="text-sm text-gray-500 truncate">
             {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
           </span>
-          {isToday && (
+          {resumeSessionId ? (
+            <span className="text-xs text-green-600 font-medium shrink-0">Aktiv</span>
+          ) : isToday && (
             <span className="text-xs text-blue-600 font-medium shrink-0">Today</span>
           )}
         </div>

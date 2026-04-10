@@ -3,13 +3,13 @@ import { Suspense } from 'react';
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { createServerClient } from '@/lib/supabase/server';
 import { VolumeChartClient } from '@/components/volume-chart-client';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
 import { EditExerciseButton } from './edit-button';
+import { BackButton } from './back-button';
 import { formatDate } from '@/lib/utils';
 import type { MuscleGroup } from '@/lib/types';
 
@@ -77,10 +77,7 @@ export default async function ExercisePage({ params }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Back link */}
-      <Link href="/dashboard" className="text-xs text-gray-400 active:text-gray-600 transition-colors">
-        ← Dashboard
-      </Link>
+      <BackButton />
 
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-2 min-w-0">
