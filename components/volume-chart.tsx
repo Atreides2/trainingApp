@@ -15,9 +15,10 @@ import type { VolumeDataPoint } from '@/lib/types';
 interface VolumeChartProps {
   data: VolumeDataPoint[];
   exerciseName: string;
+  unit?: string;
 }
 
-export function VolumeChart({ data, exerciseName }: VolumeChartProps) {
+export function VolumeChart({ data, exerciseName, unit = 'kg·reps' }: VolumeChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-40 text-gray-400 text-sm">
@@ -54,7 +55,7 @@ export function VolumeChart({ data, exerciseName }: VolumeChartProps) {
             contentStyle={{ background: '#ffffff', border: '1px solid #e5e7eb', borderRadius: 8, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
             labelStyle={{ color: '#6b7280', fontSize: 12 }}
             itemStyle={{ color: '#2563eb' }}
-            formatter={(value: number) => [`${formatVolume(value)} kg·reps`, 'Volume']}
+            formatter={(value: number) => [`${formatVolume(value)} ${unit}`, unit === 'reps' ? 'Reps' : 'Volume']}
           />
           <Line
             type="monotone"

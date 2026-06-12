@@ -96,9 +96,11 @@ export async function startSession(trainingDayId: string): Promise<string> {
     }
   }
 
-  const { error: setsError } = await supabase.from('session_sets').insert(setsToInsert);
-  if (setsError) {
-    throw new Error(`Failed to create sets: ${setsError.message}`);
+  if (setsToInsert.length > 0) {
+    const { error: setsError } = await supabase.from('session_sets').insert(setsToInsert);
+    if (setsError) {
+      throw new Error(`Failed to create sets: ${setsError.message}`);
+    }
   }
 
   return session.id;
@@ -232,12 +234,14 @@ export async function swapExerciseInSession(
 ): Promise<SessionSet[]> {
   const supabase = createServerClient();
 
-  // 1. Delete old exercise's sets
-  await supabase
+  // 1. Delete the old exercise's open sets — completed sets are logged training data and stay
+  const { error: deleteError } = await supabase
     .from('session_sets')
     .delete()
     .eq('session_id', sessionId)
-    .eq('exercise_id', oldExerciseId);
+    .eq('exercise_id', oldExerciseId)
+    .eq('completed', false);
+  if (deleteError) throw new Error(`Failed to swap exercise in session: ${deleteError.message}`);
 
   // 2. Insert new exercise's sets
   const setsToInsert = Array.from({ length: plannedSets }, (_, i) => ({

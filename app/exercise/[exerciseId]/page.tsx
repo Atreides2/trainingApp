@@ -37,13 +37,20 @@ export default async function ExercisePage({ params }: Props) {
     muscle_groups: { id: string; name: string; slug: string };
   };
 
-  const [exerciseResult, volumeResult, recentSetsResult, muscleResult, allMuscleGroupsResult] = await Promise.all([
+  const [exerciseResult, volumeResult, repsResult, recentSetsResult, muscleResult, allMuscleGroupsResult] = await Promise.all([
     supabase.from('exercises').select('*').eq('id', exerciseId).single(),
     supabase
       .from('exercise_volume')
       .select('date, total_volume, session_id')
       .eq('exercise_id', exerciseId)
       .order('date', { ascending: true }),
+    // Bodyweight progression: total reps per session (the volume view excludes weight-0 sets)
+    supabase
+      .from('session_sets')
+      .select('actual_reps, session:workout_sessions!inner(id, date, status)')
+      .eq('exercise_id', exerciseId)
+      .eq('completed', true)
+      .eq('session.status', 'done'),
     supabase
       .from('session_sets')
       .select('id, set_number, actual_reps, actual_weight, completed, workout_sessions(date)')
@@ -61,6 +68,24 @@ export default async function ExercisePage({ params }: Props) {
   const exercise = exerciseResult.data as ExerciseRow | null;
   const volumeData = volumeResult.data as VolumeRow[] | null;
   const recentSets = recentSetsResult.data as RecentSetRow[] | null;
+
+  // Aggregate reps per session for bodyweight exercises
+  type RepsRow = { actual_reps: number | null; session: { id: string; date: string } };
+  const repsRows = (repsResult.data ?? []) as unknown as RepsRow[];
+  const repsBySession = new Map<string, { date: string; reps: number }>();
+  for (const row of repsRows) {
+    const entry = repsBySession.get(row.session.id) ?? { date: row.session.date, reps: 0 };
+    entry.reps += row.actual_reps ?? 0;
+    repsBySession.set(row.session.id, entry);
+  }
+  const repsData: VolumeRow[] = Array.from(repsBySession.entries())
+    .map(([sessionId, entry]) => ({
+      date: entry.date,
+      total_volume: entry.reps,
+      session_id: sessionId,
+    }))
+    .filter((d) => d.total_volume > 0)
+    .sort((a, b) => a.date.localeCompare(b.date));
   const muscleRows = (muscleResult.data ?? []) as unknown as MuscleRow[];
   const allMuscleGroups = (allMuscleGroupsResult.data ?? []) as MuscleGroup[];
 
@@ -102,22 +127,29 @@ export default async function ExercisePage({ params }: Props) {
         </div>
       </div>
 
-      {/* Volume chart */}
+      {/* Progress chart: volume for weighted exercises, total reps for bodyweight */}
       <Card>
-        <h2 className="text-sm font-semibold text-gray-500 mb-4">Total Volume</h2>
+        <h2 className="text-sm font-semibold text-gray-500 mb-4">
+          {exercise.is_bodyweight ? 'Total Reps' : 'Total Volume'}
+        </h2>
         <Suspense fallback={<Skeleton className="h-52" />}>
           <VolumeChartClient
-            data={(volumeData ?? []).map((d) => ({
-              date: d.date,
-              total_volume: Number(d.total_volume),
-              session_id: d.session_id,
-            }))}
+            data={
+              exercise.is_bodyweight
+                ? repsData
+                : (volumeData ?? []).map((d) => ({
+                    date: d.date,
+                    total_volume: Number(d.total_volume),
+                    session_id: d.session_id,
+                  }))
+            }
             exerciseName={exercise.name}
+            unit={exercise.is_bodyweight ? 'reps' : 'kg·reps'}
           />
         </Suspense>
         {exercise.is_bodyweight && (
           <p className="text-xs text-gray-400 mt-2">
-            Volume only counts sessions where you entered added weight. Bodyweight-only sets are excluded.
+            Shows total reps per session. Added weight is listed under Recent sets.
           </p>
         )}
       </Card>

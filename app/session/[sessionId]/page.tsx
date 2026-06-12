@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useState, useTransition } from 'react';
+import { use, useCallback, useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSessionStore } from '@/lib/hooks/use-session-store';
 import { ExerciseCard } from '@/components/exercise-card';
@@ -9,7 +9,9 @@ import { SwapPicker } from '@/components/swap-picker';
 import { ScopeDialog } from '@/components/scope-dialog';
 import { RestTimer } from '@/components/rest-timer';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatDate } from '@/lib/utils';
 import {
   markSetComplete,
   reopenSet,
@@ -45,12 +47,20 @@ export default function SessionPage({ params }: Props) {
     addExercise: storeAddExercise,
     removeExercise: storeRemoveExercise,
     swapExercise: storeSwapExercise,
+    replaceSets: storeReplaceSets,
     reset,
   } = useSessionStore();
   const router = useRouter();
   const [isFinishing, startFinish] = useTransition();
   const [isCancelling, startCancel] = useTransition();
   const [restUntil, setRestUntil] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [readOnlySession, setReadOnlySession] = useState<{
+    dayName: string;
+    date: string;
+    status: 'done' | 'cancelled';
+    exercises: SessionExercise[];
+  } | null>(null);
 
   // Exercise picker + scope dialog state
   const [allExercises, setAllExercises] = useState<Exercise[]>([]);
@@ -105,10 +115,25 @@ export default function SessionPage({ params }: Props) {
         exerciseMap.get(row.exercise_id)!.sets.push(setData as SessionSet);
       }
 
-      type RawSession = { training_day: { id: string; name: string } | null };
+      type RawSession = {
+        status: 'active' | 'done' | 'cancelled';
+        date: string;
+        training_day: { id: string; name: string } | null;
+      };
       const raw = session as unknown as RawSession;
       const tdId = raw.training_day?.id ?? '';
       const dName = raw.training_day?.name ?? 'Workout';
+
+      // Finished/cancelled sessions are history — render read-only instead of editable
+      if (raw.status !== 'active') {
+        setReadOnlySession({
+          dayName: dName,
+          date: raw.date,
+          status: raw.status,
+          exercises: Array.from(exerciseMap.values()),
+        });
+        return;
+      }
 
       // Load day_exercises for dayExerciseMap (exercise_id → day_exercise id) + sort order
       let deMap: Record<string, string> = {};
@@ -168,26 +193,48 @@ export default function SessionPage({ params }: Props) {
     setShowPicker(true);
   }
 
+  const SAVE_ERROR = 'Saving failed — check your connection and try again.';
+
   // --- Set handlers ---
   async function handleComplete(setId: string, weight: number, reps: number) {
-    await markSetComplete(setId, weight, reps);
-    markSetDone(setId, weight, reps);
-    setRestUntil(Date.now() + 90_000);
+    try {
+      setActionError(null);
+      await markSetComplete(setId, weight, reps);
+      markSetDone(setId, weight, reps);
+      setRestUntil(Date.now() + 90_000);
+    } catch {
+      setActionError(SAVE_ERROR);
+    }
   }
 
   async function handleReopen(setId: string) {
-    await reopenSet(setId);
-    storeReopen(setId);
+    try {
+      setActionError(null);
+      await reopenSet(setId);
+      storeReopen(setId);
+    } catch {
+      setActionError(SAVE_ERROR);
+    }
   }
 
   async function handleAddSet(sid: string, exerciseId: string) {
-    const newSet = await addSet(sid, exerciseId);
-    appendSet(exerciseId, newSet);
+    try {
+      setActionError(null);
+      const newSet = await addSet(sid, exerciseId);
+      appendSet(exerciseId, newSet);
+    } catch {
+      setActionError(SAVE_ERROR);
+    }
   }
 
   async function handleRemoveSet(setId: string) {
-    await removeSet(setId);
-    storeRemove(setId);
+    try {
+      setActionError(null);
+      await removeSet(setId);
+      storeRemove(setId);
+    } catch {
+      setActionError(SAVE_ERROR);
+    }
   }
 
   // --- Exercise add flow ---
@@ -201,13 +248,18 @@ export default function SessionPage({ params }: Props) {
     const ex = pendingAdd;
     setPendingAdd(null);
     startMutate(async () => {
-      const newSets = await addExerciseToSession(sessionId, ex.id, 3, 10, 0);
-      storeAddExercise({
-        exercise_id: ex.id,
-        exercise_name: ex.name,
-        is_bodyweight: ex.is_bodyweight,
-        sets: newSets,
-      });
+      try {
+        setActionError(null);
+        const newSets = await addExerciseToSession(sessionId, ex.id, 3, 10, 0);
+        storeAddExercise({
+          exercise_id: ex.id,
+          exercise_name: ex.name,
+          is_bodyweight: ex.is_bodyweight,
+          sets: newSets,
+        });
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
@@ -217,16 +269,21 @@ export default function SessionPage({ params }: Props) {
     const tdId = trainingDayId;
     setPendingAdd(null);
     startMutate(async () => {
-      const [newSets] = await Promise.all([
-        addExerciseToSession(sessionId, ex.id, 3, 10, 0),
-        addDayExercise(tdId, ex.id, 3, 10, 0),
-      ]);
-      storeAddExercise({
-        exercise_id: ex.id,
-        exercise_name: ex.name,
-        is_bodyweight: ex.is_bodyweight,
-        sets: newSets,
-      });
+      try {
+        setActionError(null);
+        const [newSets] = await Promise.all([
+          addExerciseToSession(sessionId, ex.id, 3, 10, 0),
+          addDayExercise(tdId, ex.id, 3, 10, 0),
+        ]);
+        storeAddExercise({
+          exercise_id: ex.id,
+          exercise_name: ex.name,
+          is_bodyweight: ex.is_bodyweight,
+          sets: newSets,
+        });
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
@@ -240,8 +297,13 @@ export default function SessionPage({ params }: Props) {
     const exId = pendingRemoveId;
     setPendingRemoveId(null);
     startMutate(async () => {
-      await removeExerciseFromSession(sessionId, exId);
-      storeRemoveExercise(exId);
+      try {
+        setActionError(null);
+        await removeExerciseFromSession(sessionId, exId);
+        storeRemoveExercise(exId);
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
@@ -251,11 +313,16 @@ export default function SessionPage({ params }: Props) {
     const tdId = trainingDayId;
     setPendingRemoveId(null);
     startMutate(async () => {
-      await Promise.all([
-        removeExerciseFromSession(sessionId, exId),
-        removeDayExerciseByExercise(tdId, exId),
-      ]);
-      storeRemoveExercise(exId);
+      try {
+        setActionError(null);
+        await Promise.all([
+          removeExerciseFromSession(sessionId, exId),
+          removeDayExerciseByExercise(tdId, exId),
+        ]);
+        storeRemoveExercise(exId);
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
@@ -269,79 +336,92 @@ export default function SessionPage({ params }: Props) {
     setPendingSwapId(null);
   }
 
-  function handleSwapSessionOnly() {
+  function performSwap(updateTemplate: boolean) {
     if (!pendingSwapId || !pendingSwapTarget) return;
     const oldId = pendingSwapId;
     const newEx = pendingSwapTarget;
     const oldExercise = exercises.find((e) => e.exercise_id === oldId);
-    const plannedSets = oldExercise?.sets.length ?? 3;
-    const plannedReps = oldExercise?.sets[0]?.planned_reps ?? 10;
-    const plannedWeight = oldExercise?.sets[0]?.planned_weight ?? 0;
-    setPendingSwapId(null);
-    setPendingSwapTarget(null);
-    startMutate(async () => {
-      const newSets = await swapExerciseInSession(sessionId, oldId, newEx.id, plannedSets, plannedReps, plannedWeight);
-      storeSwapExercise(oldId, {
-        exercise_id: newEx.id,
-        exercise_name: newEx.name,
-        is_bodyweight: newEx.is_bodyweight,
-        sets: newSets,
-      });
-      // Update muscle map for the new exercise
-      setMuscleMap((prev) => {
-        const next = new Map(prev);
-        next.set(newEx.id, newEx.primary_muscles);
-        return next;
-      });
-    });
-  }
-
-  function handleSwapSessionAndFuture() {
-    if (!pendingSwapId || !pendingSwapTarget) return;
-    const oldId = pendingSwapId;
-    const newEx = pendingSwapTarget;
-    const oldExercise = exercises.find((e) => e.exercise_id === oldId);
-    const plannedSets = oldExercise?.sets.length ?? 3;
+    const completedSets = oldExercise?.sets.filter((s) => s.completed) ?? [];
+    const openSets = (oldExercise?.sets.length ?? 3) - completedSets.length;
+    const plannedSets = openSets > 0 ? openSets : 3;
     const plannedReps = oldExercise?.sets[0]?.planned_reps ?? 10;
     const plannedWeight = oldExercise?.sets[0]?.planned_weight ?? 0;
     const dayExId = dayExerciseMap[oldId];
     setPendingSwapId(null);
     setPendingSwapTarget(null);
     startMutate(async () => {
-      const newSets = await swapExerciseInSession(sessionId, oldId, newEx.id, plannedSets, plannedReps, plannedWeight);
-      if (dayExId) await swapDayExercise(dayExId, newEx.id);
-      storeSwapExercise(oldId, {
-        exercise_id: newEx.id,
-        exercise_name: newEx.name,
-        is_bodyweight: newEx.is_bodyweight,
-        sets: newSets,
-      });
-      setMuscleMap((prev) => {
-        const next = new Map(prev);
-        next.set(newEx.id, newEx.primary_muscles);
-        return next;
-      });
+      try {
+        setActionError(null);
+        const newSets = await swapExerciseInSession(sessionId, oldId, newEx.id, plannedSets, plannedReps, plannedWeight);
+        if (updateTemplate && dayExId) await swapDayExercise(dayExId, newEx.id);
+        const newExercise: SessionExercise = {
+          exercise_id: newEx.id,
+          exercise_name: newEx.name,
+          is_bodyweight: newEx.is_bodyweight,
+          sets: newSets,
+        };
+        if (completedSets.length > 0) {
+          // Completed sets are logged work — keep the old card with them and add the new exercise
+          storeReplaceSets(oldId, completedSets);
+          storeAddExercise(newExercise);
+        } else {
+          storeSwapExercise(oldId, newExercise);
+        }
+        setMuscleMap((prev) => {
+          const next = new Map(prev);
+          next.set(newEx.id, newEx.primary_muscles);
+          return next;
+        });
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
+  }
+
+  function handleSwapSessionOnly() {
+    performSwap(false);
+  }
+
+  function handleSwapSessionAndFuture() {
+    performSwap(true);
   }
 
   // --- Finish / cancel ---
   function handleFinish() {
     startFinish(async () => {
-      await finishSession(sessionId);
-      reset();
-      router.push('/dashboard');
+      try {
+        setActionError(null);
+        await finishSession(sessionId);
+        reset();
+        router.push('/dashboard');
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
   function handleCancel() {
     startCancel(async () => {
-      await cancelSession(sessionId);
-      reset();
-      router.push('/dashboard');
+      try {
+        setActionError(null);
+        await cancelSession(sessionId);
+        reset();
+        router.push('/dashboard');
+      } catch {
+        setActionError(SAVE_ERROR);
+      }
     });
   }
 
-  if (storeSessionId !== sessionId || exercises.length === 0) {
+  const handleRestDone = useCallback(() => setRestUntil(null), []);
+
+  // Finished/cancelled session → read-only summary
+  if (readOnlySession) {
+    return <ReadOnlySessionView session={readOnlySession} onBack={() => router.push('/dashboard')} />;
+  }
+
+  // Still loading from DB
+  if (storeSessionId !== sessionId) {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton className="h-8 w-40" />
@@ -374,6 +454,16 @@ export default function SessionPage({ params }: Props) {
           </button>
         </div>
 
+        {/* Error banner */}
+        {actionError && (
+          <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2">
+            <span>{actionError}</span>
+            <button onClick={() => setActionError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* Progress bar */}
         <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
           <div
@@ -381,6 +471,13 @@ export default function SessionPage({ params }: Props) {
             style={{ width: `${totalSets > 0 ? (completedSets / totalSets) * 100 : 0}%` }}
           />
         </div>
+
+        {/* Empty session hint */}
+        {exercises.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-6">
+            No exercises in this session yet — add one below.
+          </p>
+        )}
 
         {/* Exercise cards */}
         {exercises.map((exercise) => (
@@ -409,7 +506,7 @@ export default function SessionPage({ params }: Props) {
 
       {/* Rest timer */}
       {restUntil !== null && (
-        <RestTimer until={restUntil} onDone={() => setRestUntil(null)} />
+        <RestTimer until={restUntil} onDone={handleRestDone} />
       )}
 
       {/* Sticky finish button */}
@@ -481,5 +578,79 @@ export default function SessionPage({ params }: Props) {
         />
       )}
     </>
+  );
+}
+
+function ReadOnlySessionView({
+  session,
+  onBack,
+}: {
+  session: {
+    dayName: string;
+    date: string;
+    status: 'done' | 'cancelled';
+    exercises: SessionExercise[];
+  };
+  onBack: () => void;
+}) {
+  const completedByExercise = session.exercises
+    .map((ex) => ({ ...ex, sets: ex.sets.filter((s) => s.completed) }))
+    .filter((ex) => ex.sets.length > 0);
+
+  const totalVolume = completedByExercise.reduce(
+    (sum, ex) =>
+      sum + ex.sets.reduce((s, set) => s + (set.actual_reps ?? 0) * (set.actual_weight ?? 0), 0),
+    0
+  );
+
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold">{session.dayName}</h1>
+          <p className="text-sm text-gray-500">
+            {formatDate(session.date)}
+            {totalVolume > 0 && ` · ${totalVolume.toLocaleString('en-US')} kg·reps`}
+          </p>
+        </div>
+        <span
+          className={
+            session.status === 'done'
+              ? 'text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-200'
+              : 'text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200'
+          }
+        >
+          {session.status === 'done' ? 'Abgeschlossen' : 'Abgebrochen'}
+        </span>
+      </div>
+
+      {completedByExercise.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">Keine Sätze protokolliert.</p>
+      ) : (
+        completedByExercise.map((ex) => (
+          <Card key={ex.exercise_id} className="flex flex-col gap-3">
+            <span className="text-base font-semibold text-gray-900">{ex.exercise_name}</span>
+            <div className="flex flex-col gap-1.5">
+              {ex.sets.map((set) => (
+                <div key={set.id} className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Set {set.set_number}</span>
+                  <span className="text-gray-700">
+                    {ex.is_bodyweight && !set.actual_weight
+                      ? 'BW'
+                      : `${set.actual_weight ?? 0} kg`}
+                    {' × '}
+                    {set.actual_reps ?? 0}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ))
+      )}
+
+      <Button onClick={onBack} variant="secondary" size="lg" className="w-full">
+        Zurück zum Dashboard
+      </Button>
+    </div>
   );
 }

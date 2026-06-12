@@ -9,6 +9,10 @@ const VolumeChart = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-52" /> }
 );
 
-export function VolumeChartClient(props: { data: VolumeDataPoint[]; exerciseName: string }) {
+export function VolumeChartClient(props: {
+  data: VolumeDataPoint[];
+  exerciseName: string;
+  unit?: string;
+}) {
   return <VolumeChart {...props} />;
 }

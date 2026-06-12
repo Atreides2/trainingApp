@@ -59,11 +59,11 @@ export function NumericInput({
         onChange={(e) => {
           setInputValue(e.target.value);
           const n = parseFloat(e.target.value);
-          if (!isNaN(n)) onChange(n);
+          if (!isNaN(n) && n >= min) onChange(n);
         }}
         onBlur={() => {
           const n = parseFloat(inputValue);
-          if (isNaN(n)) {
+          if (isNaN(n) || n < min) {
             onChange(min);
             setInputValue(String(min));
           }

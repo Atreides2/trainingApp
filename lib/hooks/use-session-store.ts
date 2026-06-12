@@ -22,6 +22,7 @@ interface SessionStore {
   removeSet: (setId: string) => void;
   addExercise: (exercise: SessionExercise) => void;
   removeExercise: (exerciseId: string) => void;
+  replaceSets: (exerciseId: string, sets: SessionSet[]) => void;
   swapExercise: (oldExerciseId: string, newExercise: SessionExercise) => void;
   reset: () => void;
 }
@@ -87,6 +88,14 @@ export const useSessionStore = create<SessionStore>((set) => ({
   removeExercise(exerciseId) {
     set((state) => ({
       exercises: state.exercises.filter((ex) => ex.exercise_id !== exerciseId),
+    }));
+  },
+
+  replaceSets(exerciseId, sets) {
+    set((state) => ({
+      exercises: state.exercises.map((ex) =>
+        ex.exercise_id === exerciseId ? { ...ex, sets } : ex
+      ),
     }));
   },
 

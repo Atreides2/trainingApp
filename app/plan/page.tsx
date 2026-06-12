@@ -29,19 +29,22 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     allPlans[0];
 
   // Load days + exercises for the selected plan
-  const [{ data: days }, { data: dayExercises }] = selectedPlan
-    ? await Promise.all([
-        supabase
-          .from('training_days')
-          .select('*')
-          .eq('plan_id', selectedPlan.id)
-          .order('sort_order', { ascending: true }),
-        supabase
-          .from('day_exercises')
-          .select('*, exercise:exercises(*)')
-          .order('sort_order', { ascending: true }),
-      ])
-    : [{ data: [] }, { data: [] }];
+  const { data: days } = selectedPlan
+    ? await supabase
+        .from('training_days')
+        .select('*')
+        .eq('plan_id', selectedPlan.id)
+        .order('sort_order', { ascending: true })
+    : { data: [] };
+
+  const dayIds = (days ?? []).map((d) => d.id);
+  const { data: dayExercises } = dayIds.length
+    ? await supabase
+        .from('day_exercises')
+        .select('*, exercise:exercises(*)')
+        .in('training_day_id', dayIds)
+        .order('sort_order', { ascending: true })
+    : { data: [] };
 
   return (
     <div className="flex flex-col gap-6">
