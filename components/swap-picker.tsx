@@ -22,7 +22,10 @@ export function SwapPicker({ exerciseId, exerciseName, excludeIds, onSelect, onC
     getSimilarExercises(exerciseId, [exerciseId, ...excludeIds])
       .then(setExercises)
       .finally(() => setLoading(false));
-  }, [exerciseId, excludeIds]);
+    // excludeIds is a fresh array each parent render; the open-time snapshot is
+    // all we need, so depending on it would refetch on every parent re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exerciseId]);
 
   const filtered = exercises.filter((ex) =>
     ex.name.toLowerCase().includes(search.toLowerCase())

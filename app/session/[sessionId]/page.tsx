@@ -54,6 +54,11 @@ export default function SessionPage({ params }: Props) {
   const [isFinishing, startFinish] = useTransition();
   const [isCancelling, startCancel] = useTransition();
   const [restUntil, setRestUntil] = useState<number | null>(null);
+  const [restDuration, setRestDuration] = useState(() => {
+    if (typeof window === 'undefined') return 90_000;
+    const saved = parseInt(window.localStorage.getItem('rest-duration') ?? '', 10);
+    return Number.isFinite(saved) && saved >= 15_000 && saved <= 600_000 ? saved : 90_000;
+  });
   const [actionError, setActionError] = useState<string | null>(null);
   const [readOnlySession, setReadOnlySession] = useState<{
     dayName: string;
@@ -82,23 +87,25 @@ export default function SessionPage({ params }: Props) {
     async function loadSession() {
       const supabase = getSupabaseClient();
 
-      const { data: session } = await supabase
-        .from('workout_sessions')
-        .select('*, training_day:training_days(id, name)')
-        .eq('id', sessionId)
-        .single();
-
-      if (!session) return;
-
       type RawSet = SessionSet & { exercise: { name: string; is_bodyweight: boolean } };
 
-      const { data: sets } = await supabase
-        .from('session_sets')
-        .select('*, exercise:exercises(name, is_bodyweight)')
-        .eq('session_id', sessionId)
-        .order('set_number', { ascending: true }) as { data: RawSet[] | null; error: unknown };
+      // Both queries only need sessionId — run them in parallel
+      const [sessionRes, setsRes] = await Promise.all([
+        supabase
+          .from('workout_sessions')
+          .select('*, training_day:training_days(id, name)')
+          .eq('id', sessionId)
+          .single(),
+        supabase
+          .from('session_sets')
+          .select('*, exercise:exercises(name, is_bodyweight)')
+          .eq('session_id', sessionId)
+          .order('set_number', { ascending: true }),
+      ]);
 
-      if (!sets) return;
+      const session = sessionRes.data;
+      const sets = setsRes.data as RawSet[] | null;
+      if (!session || !sets) return;
 
       const exerciseMap = new Map<string, SessionExercise>();
       for (const row of sets) {
@@ -135,40 +142,43 @@ export default function SessionPage({ params }: Props) {
         return;
       }
 
-      // Load day_exercises for dayExerciseMap (exercise_id → day_exercise id) + sort order
-      let deMap: Record<string, string> = {};
+      // Template mapping + muscle groups depend on wave 1 but not on each other
+      const exerciseIds = Array.from(exerciseMap.keys());
+      const [desRes, mgRes] = await Promise.all([
+        tdId
+          ? supabase
+              .from('day_exercises')
+              .select('id, exercise_id, sort_order')
+              .eq('training_day_id', tdId)
+              .order('sort_order', { ascending: true })
+          : Promise.resolve({ data: null }),
+        exerciseIds.length > 0
+          ? supabase
+              .from('exercise_muscle_groups')
+              .select('exercise_id, is_primary, muscle_groups(id, name, slug)')
+              .in('exercise_id', exerciseIds)
+              .eq('is_primary', true)
+          : Promise.resolve({ data: null }),
+      ]);
+
+      const deMap: Record<string, string> = {};
       const sortOrderMap: Record<string, number> = {};
-      if (tdId) {
-        const { data: des } = await supabase
-          .from('day_exercises')
-          .select('id, exercise_id, sort_order')
-          .eq('training_day_id', tdId)
-          .order('sort_order', { ascending: true }) as { data: { id: string; exercise_id: string; sort_order: number }[] | null; error: unknown };
-        if (des) {
-          for (const de of des) {
-            deMap[de.exercise_id] = de.id;
-            sortOrderMap[de.exercise_id] = de.sort_order;
-          }
+      const des = desRes.data as { id: string; exercise_id: string; sort_order: number }[] | null;
+      if (des) {
+        for (const de of des) {
+          deMap[de.exercise_id] = de.id;
+          sortOrderMap[de.exercise_id] = de.sort_order;
         }
       }
 
-      // Load muscle groups for exercises in this session
-      const exerciseIds = Array.from(exerciseMap.keys());
-      if (exerciseIds.length > 0) {
-        const { data: mgRows } = await supabase
-          .from('exercise_muscle_groups')
-          .select('exercise_id, is_primary, muscle_groups(id, name, slug)')
-          .in('exercise_id', exerciseIds)
-          .eq('is_primary', true);
-
-        if (mgRows) {
-          const newMap = new Map<string, MuscleGroup[]>();
-          for (const row of mgRows as unknown as { exercise_id: string; is_primary: boolean; muscle_groups: MuscleGroup }[]) {
-            if (!newMap.has(row.exercise_id)) newMap.set(row.exercise_id, []);
-            newMap.get(row.exercise_id)!.push(row.muscle_groups);
-          }
-          setMuscleMap(newMap);
+      const mgRows = mgRes.data;
+      if (mgRows) {
+        const newMap = new Map<string, MuscleGroup[]>();
+        for (const row of mgRows as unknown as { exercise_id: string; is_primary: boolean; muscle_groups: MuscleGroup }[]) {
+          if (!newMap.has(row.exercise_id)) newMap.set(row.exercise_id, []);
+          newMap.get(row.exercise_id)!.push(row.muscle_groups);
         }
+        setMuscleMap(newMap);
       }
 
       const sortedExercises = Array.from(exerciseMap.values()).sort((a, b) => {
@@ -195,28 +205,39 @@ export default function SessionPage({ params }: Props) {
 
   const SAVE_ERROR = 'Saving failed — check your connection and try again.';
 
+  function findSet(setId: string): SessionSet | undefined {
+    return exercises.flatMap((ex) => ex.sets).find((s) => s.id === setId);
+  }
+
   // --- Set handlers ---
+  // Optimistic: the store updates (and the rest timer starts) immediately so taps
+  // feel instant on slow connections; on server failure we roll back and show the banner.
   async function handleComplete(setId: string, weight: number, reps: number) {
+    setActionError(null);
+    markSetDone(setId, weight, reps);
+    setRestUntil(Date.now() + restDuration);
     try {
-      setActionError(null);
       await markSetComplete(setId, weight, reps);
-      markSetDone(setId, weight, reps);
-      setRestUntil(Date.now() + 90_000);
     } catch {
+      storeReopen(setId);
+      setRestUntil(null);
       setActionError(SAVE_ERROR);
     }
   }
 
   async function handleReopen(setId: string) {
+    setActionError(null);
+    const prev = findSet(setId);
+    storeReopen(setId);
     try {
-      setActionError(null);
       await reopenSet(setId);
-      storeReopen(setId);
     } catch {
+      if (prev) markSetDone(setId, prev.actual_weight ?? 0, prev.actual_reps ?? 0);
       setActionError(SAVE_ERROR);
     }
   }
 
+  // Not optimistic: the new row's id comes from the server
   async function handleAddSet(sid: string, exerciseId: string) {
     try {
       setActionError(null);
@@ -228,11 +249,13 @@ export default function SessionPage({ params }: Props) {
   }
 
   async function handleRemoveSet(setId: string) {
+    setActionError(null);
+    const prev = findSet(setId);
+    storeRemove(setId);
     try {
-      setActionError(null);
       await removeSet(setId);
-      storeRemove(setId);
     } catch {
+      if (prev) appendSet(prev.exercise_id, prev);
       setActionError(SAVE_ERROR);
     }
   }
@@ -415,6 +438,16 @@ export default function SessionPage({ params }: Props) {
 
   const handleRestDone = useCallback(() => setRestUntil(null), []);
 
+  // Adjust both the running countdown and the saved default
+  function handleRestAdjust(deltaMs: number) {
+    const next = Math.min(600_000, Math.max(15_000, restDuration + deltaMs));
+    const applied = next - restDuration;
+    if (applied === 0) return;
+    setRestDuration(next);
+    window.localStorage.setItem('rest-duration', String(next));
+    setRestUntil((u) => (u === null ? u : u + applied));
+  }
+
   // Finished/cancelled session → read-only summary
   if (readOnlySession) {
     return <ReadOnlySessionView session={readOnlySession} onBack={() => router.push('/dashboard')} />;
@@ -506,7 +539,7 @@ export default function SessionPage({ params }: Props) {
 
       {/* Rest timer */}
       {restUntil !== null && (
-        <RestTimer until={restUntil} onDone={handleRestDone} />
+        <RestTimer until={restUntil} total={restDuration} onAdjust={handleRestAdjust} onDone={handleRestDone} />
       )}
 
       {/* Sticky finish button */}

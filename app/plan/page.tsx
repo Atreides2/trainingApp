@@ -14,9 +14,9 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
   const { planId } = await searchParams;
   const supabase = createServerClient();
 
-  const [{ data: plans }, { data: allExercises }, exercisesWithMuscles] = await Promise.all([
+  // exercisesWithMuscles is a superset of the plain exercise list — one query less
+  const [{ data: plans }, exercisesWithMuscles] = await Promise.all([
     supabase.from('training_plans').select('*').order('created_at', { ascending: true }),
-    supabase.from('exercises').select('*').order('name'),
     getAllExercisesWithMuscles(),
   ]);
 
@@ -28,23 +28,21 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
     allPlans.find((p) => p.is_active) ??
     allPlans[0];
 
-  // Load days + exercises for the selected plan
-  const { data: days } = selectedPlan
-    ? await supabase
-        .from('training_days')
-        .select('*')
-        .eq('plan_id', selectedPlan.id)
-        .order('sort_order', { ascending: true })
-    : { data: [] };
-
-  const dayIds = (days ?? []).map((d) => d.id);
-  const { data: dayExercises } = dayIds.length
-    ? await supabase
-        .from('day_exercises')
-        .select('*, exercise:exercises(*)')
-        .in('training_day_id', dayIds)
-        .order('sort_order', { ascending: true })
-    : { data: [] };
+  // Days + their exercises in parallel — day_exercises filtered to the plan via join
+  const [{ data: days }, { data: dayExercises }] = selectedPlan
+    ? await Promise.all([
+        supabase
+          .from('training_days')
+          .select('*')
+          .eq('plan_id', selectedPlan.id)
+          .order('sort_order', { ascending: true }),
+        supabase
+          .from('day_exercises')
+          .select('*, exercise:exercises(*), day:training_days!inner(plan_id)')
+          .eq('day.plan_id', selectedPlan.id)
+          .order('sort_order', { ascending: true }),
+      ])
+    : [{ data: [] }, { data: [] }];
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,7 +65,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
             planId={selectedPlan.id}
             days={days ?? []}
             dayExercises={dayExercises ?? []}
-            allExercises={allExercises ?? []}
+            allExercises={exercisesWithMuscles}
             exercisesWithMuscles={exercisesWithMuscles}
           />
         </section>

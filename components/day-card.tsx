@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn, toDateString } from '@/lib/utils';
 import type { TrainingDay, DayExercise } from '@/lib/types';
 
 const DAY_COLORS: Record<string, string> = {
@@ -18,7 +18,7 @@ interface DayCardProps {
   exercises: DayExercise[];
   isToday: boolean;
   resumeSessionId?: string;
-  onStart: (trainingDayId: string) => Promise<string>;
+  onStart: (trainingDayId: string, localDate?: string) => Promise<string>;
 }
 
 export function DayCard({ day, exercises, isToday, resumeSessionId, onStart }: DayCardProps) {
@@ -34,7 +34,7 @@ export function DayCard({ day, exercises, isToday, resumeSessionId, onStart }: D
         router.push(`/session/${resumeSessionId}`);
         return;
       }
-      const sessionId = await onStart(day.id);
+      const sessionId = await onStart(day.id, toDateString(new Date()));
       router.push(`/session/${sessionId}`);
     });
   }

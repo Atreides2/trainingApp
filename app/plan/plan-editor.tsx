@@ -12,6 +12,7 @@ import {
   removeDayExercise,
   addDayExercise,
   swapDayExercise,
+  updateDayExerciseOrders,
   createDayForPlan,
   deleteDay,
 } from './actions';
@@ -44,6 +45,7 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
         | { type: 'remove'; id: string }
         | { type: 'add'; de: DayExercise }
         | { type: 'swap'; id: string; newExercise: Exercise }
+        | { type: 'reorder'; orderedIds: string[] }
     ) => {
       if (action.type === 'remove') return state.filter((de) => de.id !== action.id);
       if (action.type === 'add') return [...state, action.de];
@@ -53,6 +55,16 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
             ? { ...de, exercise_id: action.newExercise.id, exercise: action.newExercise }
             : de
         );
+      }
+      if (action.type === 'reorder') {
+        // Re-slot one day's exercises into their existing array positions in the new order
+        const newIndex = new Map(action.orderedIds.map((id, i) => [id, i]));
+        const reordered = state
+          .filter((de) => newIndex.has(de.id))
+          .sort((a, b) => newIndex.get(a.id)! - newIndex.get(b.id)!)
+          .map((de, i) => ({ ...de, sort_order: i + 1 }));
+        let k = 0;
+        return state.map((de) => (newIndex.has(de.id) ? reordered[k++] : de));
       }
       return state.map((de) => (de.id === action.id ? { ...de, ...action.patch } : de));
     }
@@ -67,6 +79,7 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
   const [showNewDay, setShowNewDay] = useState(false);
   const [newDayName, setNewDayName] = useState('');
   const [isCreatingDay, startCreateDay] = useTransition();
+  const [dayError, setDayError] = useState<string | null>(null);
 
   function handlePickerSelect(dayId: string, exercise: Exercise) {
     setPickerDayId(null);
@@ -83,6 +96,19 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
     startAdd(async () => {
       updateOptimistic({ type: 'add', de: placeholder });
       await addDayExercise(dayId, exercise.id, 3, 10, 0);
+    });
+  }
+
+  function handleMove(dayId: string, index: number, direction: -1 | 1) {
+    const dayExs = optimisticDEs.filter((de) => de.training_day_id === dayId);
+    const target = index + direction;
+    if (target < 0 || target >= dayExs.length) return;
+    const reordered = [...dayExs];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    const orderedIds = reordered.map((de) => de.id);
+    startAdd(async () => {
+      updateOptimistic({ type: 'reorder', orderedIds });
+      await updateDayExerciseOrders(orderedIds.map((id, i) => ({ id, sort_order: i + 1 })));
     });
   }
 
@@ -105,9 +131,19 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
     });
   }
 
-  function handleDeleteDay(dayId: string) {
+  function handleDeleteDay(dayId: string, dayName: string) {
+    if (!window.confirm(`Tag „${dayName}" wirklich löschen?`)) return;
+    setDayError(null);
     startCreateDay(async () => {
-      await deleteDay(dayId);
+      const result = await deleteDay(dayId);
+      if (result.error === 'HAS_SESSIONS') {
+        setDayError('Kann nicht gelöscht werden — es gibt bereits Sessions zu diesem Tag.');
+        return;
+      }
+      if (result.error) {
+        setDayError('Löschen fehlgeschlagen — bitte erneut versuchen.');
+        return;
+      }
       router.refresh();
     });
   }
@@ -117,6 +153,14 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
       <p className="text-xs text-gray-400">
         Tippe auf − / + oder gib eine Zahl ein. Änderungen werden automatisch gespeichert.
       </p>
+      {dayError && (
+        <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2 -mt-4">
+          <span>{dayError}</span>
+          <button onClick={() => setDayError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
+            ✕
+          </button>
+        </div>
+      )}
       {days.map((day) => {
         const exercises = optimisticDEs.filter((de) => de.training_day_id === day.id);
         const existingIds = exercises.map((de) => de.exercise_id);
@@ -128,7 +172,7 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
                 {day.name}
               </h2>
               <button
-                onClick={() => handleDeleteDay(day.id)}
+                onClick={() => handleDeleteDay(day.id, day.name)}
                 disabled={isCreatingDay}
                 className="text-xs text-red-400 disabled:opacity-50"
                 title="Tag löschen"
@@ -143,7 +187,7 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
                 </div>
               )}
 
-              {exercises.map((de) => (
+              {exercises.map((de, i) => (
                 <PlanRow
                   key={de.id}
                   de={de}
@@ -151,6 +195,8 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
                   onUpdate={(patch) => updateOptimistic({ type: 'update', id: de.id, patch })}
                   onRemove={() => updateOptimistic({ type: 'remove', id: de.id })}
                   onSwap={() => setSwapTargetDE(de)}
+                  onMoveUp={i > 0 ? () => handleMove(day.id, i, -1) : undefined}
+                  onMoveDown={i < exercises.length - 1 ? () => handleMove(day.id, i, 1) : undefined}
                 />
               ))}
 
@@ -236,12 +282,16 @@ function PlanRow({
   onUpdate,
   onRemove,
   onSwap,
+  onMoveUp,
+  onMoveDown,
 }: {
   de: DayExercise;
   primaryMuscles: import('@/lib/types').MuscleGroup[];
   onUpdate: (patch: Partial<DayExercise>) => void;
   onRemove: () => void;
   onSwap: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   const [isPending, startTransition] = useTransition();
   const [savedFlash, setSavedFlash] = useState(false);
@@ -271,6 +321,22 @@ function PlanRow({
           {isPending && <span className="text-xs text-gray-400">Speichern…</span>}
           {!isPending && savedFlash && <span className="text-xs text-green-500">Gespeichert</span>}
         </div>
+        <button
+          onClick={onMoveUp}
+          disabled={isPending || !onMoveUp}
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-xs disabled:opacity-30"
+          title="Nach oben"
+        >
+          ▲
+        </button>
+        <button
+          onClick={onMoveDown}
+          disabled={isPending || !onMoveDown}
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-xs disabled:opacity-30"
+          title="Nach unten"
+        >
+          ▼
+        </button>
         <button
           onClick={onSwap}
           disabled={isPending}

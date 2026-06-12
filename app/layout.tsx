@@ -7,11 +7,16 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#f9fafb',
 };
 
 export const metadata: Metadata = {
   title: 'Training App',
   description: 'Track your Push/Pull/Legs workouts',
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

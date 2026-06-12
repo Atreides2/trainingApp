@@ -18,6 +18,7 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
   const [isPending, startTransition] = useTransition();
   const [showNewInput, setShowNewInput] = useState(false);
   const [newName, setNewName] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function handleSelect(planId: string) {
     router.push(`/plan?planId=${planId}`);
@@ -30,9 +31,19 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
     });
   }
 
-  function handleDelete(planId: string) {
+  function handleDelete(planId: string, planName: string) {
+    if (!window.confirm(`Plan „${planName}" wirklich löschen?`)) return;
+    setDeleteError(null);
     startTransition(async () => {
-      await deletePlan(planId);
+      const result = await deletePlan(planId);
+      if (result.error === 'HAS_SESSIONS') {
+        setDeleteError('Kann nicht gelöscht werden — es gibt bereits Sessions zu diesem Plan.');
+        return;
+      }
+      if (result.error) {
+        setDeleteError('Löschen fehlgeschlagen — bitte erneut versuchen.');
+        return;
+      }
       router.push('/plan');
     });
   }
@@ -50,6 +61,14 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
 
   return (
     <div className="flex flex-col gap-2">
+      {deleteError && (
+        <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2">
+          <span>{deleteError}</span>
+          <button onClick={() => setDeleteError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
+            ✕
+          </button>
+        </div>
+      )}
       {plans.map((plan) => (
         <Card
           key={plan.id}
@@ -79,7 +98,7 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
             )}
             {!plan.is_active && plans.length > 1 && (
               <button
-                onClick={() => handleDelete(plan.id)}
+                onClick={() => handleDelete(plan.id, plan.name)}
                 disabled={isPending}
                 className="text-xs text-red-400 disabled:opacity-50"
               >

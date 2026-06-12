@@ -131,12 +131,15 @@ export async function getAllMuscleGroups(): Promise<MuscleGroup[]> {
   return (data ?? []) as MuscleGroup[];
 }
 
+/** Returned instead of thrown: server action error messages are redacted in production. */
+export type ExerciseSaveResult = { error?: 'DUPLICATE_NAME' | 'UNKNOWN' };
+
 export async function createExercise(
   name: string,
   isBodyweight: boolean,
   primaryIds: string[],
   secondaryIds: string[]
-): Promise<Exercise> {
+): Promise<ExerciseSaveResult> {
   const supabase = createServerClient();
 
   const { data: exercise, error } = await supabase
@@ -145,7 +148,9 @@ export async function createExercise(
     .select('*')
     .single();
 
-  if (error || !exercise) throw new Error(`Failed to create exercise: ${error?.message}`);
+  // 23505: unique violation on exercises.name
+  if (error?.code === '23505') return { error: 'DUPLICATE_NAME' };
+  if (error || !exercise) return { error: 'UNKNOWN' };
 
   const muscleRows = [
     ...primaryIds.map((id) => ({ exercise_id: exercise.id, muscle_group_id: id, is_primary: true })),
@@ -154,51 +159,34 @@ export async function createExercise(
 
   if (muscleRows.length > 0) {
     const { error: mgError } = await supabase.from('exercise_muscle_groups').insert(muscleRows);
-    if (mgError) throw new Error(`Failed to tag muscles: ${mgError.message}`);
+    if (mgError) return { error: 'UNKNOWN' };
   }
 
   revalidatePath('/exercises');
-  return exercise as Exercise;
+  return {};
 }
 
 export async function updateExercise(
   exerciseId: string,
+  name: string,
   isBodyweight: boolean,
   primaryIds: string[],
   secondaryIds: string[]
-): Promise<void> {
+): Promise<ExerciseSaveResult> {
   const supabase = createServerClient();
 
   const { error: exError } = await supabase
     .from('exercises')
-    .update({ is_bodyweight: isBodyweight })
+    .update({ name, is_bodyweight: isBodyweight })
     .eq('id', exerciseId);
-  if (exError) throw new Error(`Failed to update exercise: ${exError.message}`);
+  if (exError?.code === '23505') return { error: 'DUPLICATE_NAME' };
+  if (exError) return { error: 'UNKNOWN' };
 
-  await supabase.from('exercise_muscle_groups').delete().eq('exercise_id', exerciseId);
-
-  const muscleRows = [
-    ...primaryIds.map((id) => ({ exercise_id: exerciseId, muscle_group_id: id, is_primary: true })),
-    ...secondaryIds.map((id) => ({ exercise_id: exerciseId, muscle_group_id: id, is_primary: false })),
-  ];
-
-  if (muscleRows.length > 0) {
-    const { error } = await supabase.from('exercise_muscle_groups').insert(muscleRows);
-    if (error) throw new Error(`Failed to update muscles: ${error.message}`);
-  }
-
-  revalidatePath('/exercises');
-  revalidatePath(`/exercise/${exerciseId}`);
-}
-
-export async function updateExerciseMuscles(
-  exerciseId: string,
-  primaryIds: string[],
-  secondaryIds: string[]
-): Promise<void> {
-  const supabase = createServerClient();
-
-  await supabase.from('exercise_muscle_groups').delete().eq('exercise_id', exerciseId);
+  const { error: delError } = await supabase
+    .from('exercise_muscle_groups')
+    .delete()
+    .eq('exercise_id', exerciseId);
+  if (delError) return { error: 'UNKNOWN' };
 
   const muscleRows = [
     ...primaryIds.map((id) => ({ exercise_id: exerciseId, muscle_group_id: id, is_primary: true })),
@@ -207,9 +195,10 @@ export async function updateExerciseMuscles(
 
   if (muscleRows.length > 0) {
     const { error } = await supabase.from('exercise_muscle_groups').insert(muscleRows);
-    if (error) throw new Error(`Failed to update muscles: ${error.message}`);
+    if (error) return { error: 'UNKNOWN' };
   }
 
   revalidatePath('/exercises');
   revalidatePath(`/exercise/${exerciseId}`);
+  return {};
 }

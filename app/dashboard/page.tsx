@@ -22,42 +22,22 @@ function suggestNextDay(recentSessions: WorkoutSession[], allDays: TrainingDay[]
 export default async function DashboardPage() {
   const supabase = createServerClient();
 
-  // Load active plan
-  const { data: activePlan } = await supabase
-    .from('training_plans')
-    .select('id')
-    .eq('is_active', true)
-    .single();
-
-  const planFilter = activePlan ? { plan_id: activePlan.id } : null;
-
+  // Filter to the active plan via join conditions instead of a separate
+  // plan lookup, so everything loads in one parallel wave
   const [{ data: days }, { data: recentSessions }, { data: activeSessions }] = await Promise.all([
-    planFilter
-      ? supabase
-          .from('training_days')
-          .select('*')
-          .eq('plan_id', planFilter.plan_id)
-          .order('sort_order', { ascending: true })
-      : supabase
-          .from('training_days')
-          .select('*')
-          .order('sort_order', { ascending: true }),
-    planFilter
-      ? supabase
-          .from('workout_sessions')
-          .select('*, training_day:training_days!inner(*)')
-          .eq('status', 'done')
-          .eq('training_day.plan_id', planFilter.plan_id)
-          .order('date', { ascending: false })
-          .order('completed_at', { ascending: false })
-          .limit(5)
-      : supabase
-          .from('workout_sessions')
-          .select('*, training_day:training_days(*)')
-          .eq('status', 'done')
-          .order('date', { ascending: false })
-          .order('completed_at', { ascending: false })
-          .limit(5),
+    supabase
+      .from('training_days')
+      .select('*, plan:training_plans!inner(is_active)')
+      .eq('plan.is_active', true)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('workout_sessions')
+      .select('*, training_day:training_days!inner(*, plan:training_plans!inner(is_active))')
+      .eq('status', 'done')
+      .eq('training_day.plan.is_active', true)
+      .order('date', { ascending: false })
+      .order('completed_at', { ascending: false })
+      .limit(5),
     supabase
       .from('workout_sessions')
       .select('*, training_day:training_days(*)')

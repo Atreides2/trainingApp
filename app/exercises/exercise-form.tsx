@@ -70,12 +70,22 @@ export function ExerciseForm({ muscleGroups, exercise, onClose }: ExerciseFormPr
     }
     setError(null);
     startTransition(async () => {
-      if (isEdit) {
-        await updateExercise(exercise.id, isBodyweight, Array.from(primaryIds), Array.from(secondaryIds));
-      } else {
-        await createExercise(name.trim(), isBodyweight, Array.from(primaryIds), Array.from(secondaryIds));
+      try {
+        const result = isEdit
+          ? await updateExercise(exercise.id, name.trim(), isBodyweight, Array.from(primaryIds), Array.from(secondaryIds))
+          : await createExercise(name.trim(), isBodyweight, Array.from(primaryIds), Array.from(secondaryIds));
+        if (result.error === 'DUPLICATE_NAME') {
+          setError('Eine Übung mit diesem Namen existiert bereits.');
+          return;
+        }
+        if (result.error) {
+          setError('Speichern fehlgeschlagen — bitte erneut versuchen.');
+          return;
+        }
+        onClose();
+      } catch {
+        setError('Speichern fehlgeschlagen — bitte erneut versuchen.');
       }
-      onClose();
     });
   }
 
@@ -94,19 +104,17 @@ export function ExerciseForm({ muscleGroups, exercise, onClose }: ExerciseFormPr
         </div>
 
         <div className="overflow-y-auto flex-1 px-4 py-4 flex flex-col gap-5 pb-24">
-          {/* Name (only editable in create mode) */}
-          {!isEdit && (
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs text-gray-500 font-medium">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Dumbbell Flyes"
-                className="h-11 px-3 rounded-xl bg-gray-100 text-sm text-gray-900 placeholder-gray-400 outline-none"
-              />
-            </div>
-          )}
+          {/* Name */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs text-gray-500 font-medium">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Dumbbell Flyes"
+              className="h-11 px-3 rounded-xl bg-gray-100 text-sm text-gray-900 placeholder-gray-400 outline-none"
+            />
+          </div>
 
           {/* Bodyweight toggle */}
           <div className="flex items-center justify-between">

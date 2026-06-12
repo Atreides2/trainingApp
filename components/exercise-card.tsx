@@ -81,10 +81,11 @@ export function ExerciseCard({
 
       {/* Sets */}
       <div className="flex flex-col gap-2">
-        {exercise.sets.map((set) => (
+        {exercise.sets.map((set, i) => (
           <SetRow
             key={set.id}
             set={set}
+            displayNumber={i + 1}
             isBodyweight={exercise.is_bodyweight}
             onComplete={onComplete}
             onReopen={onReopen}

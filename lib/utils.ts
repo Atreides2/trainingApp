@@ -19,12 +19,17 @@ export function formatDate(dateStr: string): string {
   });
 }
 
+/** YYYY-MM-DD in local time (toISOString would shift the date for non-UTC zones). */
+export function toDateString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 /** Monday of the week containing dateStr, as YYYY-MM-DD (local time, no UTC shift). */
 export function weekStart(dateStr: string): string {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return toDateString(d);
 }
 
 /** Sum actual_reps × actual_weight per session, keyed by session_id. */

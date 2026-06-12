@@ -7,13 +7,15 @@ import type { SessionSet } from '@/lib/types';
 
 interface SetRowProps {
   set: SessionSet;
+  /** Position in the visible list — set.set_number can have gaps after removals */
+  displayNumber: number;
   isBodyweight: boolean;
   onComplete: (setId: string, weight: number, reps: number) => Promise<void>;
   onReopen: (setId: string) => Promise<void>;
   onRemove: (setId: string) => Promise<void>;
 }
 
-export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: SetRowProps) {
+export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen, onRemove }: SetRowProps) {
   const [weight, setWeight] = useState<number | null>(
     set.actual_weight ?? (isBodyweight ? null : set.planned_weight)
   );
@@ -59,7 +61,7 @@ export function SetRow({ set, isBodyweight, onComplete, onReopen, onRemove }: Se
 
         {/* Set number */}
         <span className="text-sm text-gray-400 w-5 text-center shrink-0 font-medium">
-          {set.set_number}
+          {displayNumber}
         </span>
 
         {/* Weight stepper */}

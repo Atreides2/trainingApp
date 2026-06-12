@@ -3,40 +3,46 @@
 import { createServerClient } from '@/lib/supabase/server';
 import type { SessionSet } from '@/lib/types';
 
-export async function startSession(trainingDayId: string): Promise<string> {
+export async function startSession(trainingDayId: string, localDate?: string): Promise<string> {
   const supabase = createServerClient();
 
-  // 1. Create the session
-  const { data: session, error: sessionError } = await supabase
-    .from('workout_sessions')
-    .insert({ training_day_id: trainingDayId })
-    .select('id')
-    .single();
+  // 1.–3. Create the session, load the day template, and find the last completed
+  // session — none depend on each other, so run them in one parallel wave.
+  // The session is dated with the client's local date when provided, since the
+  // DB default current_date is UTC and shifts late-night sessions.
+  const dateValid = localDate && /^\d{4}-\d{2}-\d{2}$/.test(localDate);
+  const [sessionRes, deRes, lastRes] = await Promise.all([
+    supabase
+      .from('workout_sessions')
+      .insert({ training_day_id: trainingDayId, ...(dateValid ? { date: localDate } : {}) })
+      .select('id')
+      .single(),
+    supabase
+      .from('day_exercises')
+      .select('exercise_id, planned_sets, planned_reps, planned_weight')
+      .eq('training_day_id', trainingDayId)
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('workout_sessions')
+      .select('id')
+      .eq('training_day_id', trainingDayId)
+      .eq('status', 'done')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .single(),
+  ]);
 
-  if (sessionError || !session) {
-    throw new Error(`Failed to create session: ${sessionError?.message}`);
+  const session = sessionRes.data;
+  if (sessionRes.error || !session) {
+    throw new Error(`Failed to create session: ${sessionRes.error?.message}`);
   }
 
-  // 2. Load the day's template exercises (order + fallback values)
-  const { data: dayExercises, error: deError } = await supabase
-    .from('day_exercises')
-    .select('exercise_id, planned_sets, planned_reps, planned_weight')
-    .eq('training_day_id', trainingDayId)
-    .order('sort_order', { ascending: true });
-
-  if (deError || !dayExercises) {
-    throw new Error(`Failed to load day exercises: ${deError?.message}`);
+  const dayExercises = deRes.data;
+  if (deRes.error || !dayExercises) {
+    throw new Error(`Failed to load day exercises: ${deRes.error?.message}`);
   }
 
-  // 3. Look up last completed session for this training day
-  const { data: lastSession } = await supabase
-    .from('workout_sessions')
-    .select('id')
-    .eq('training_day_id', trainingDayId)
-    .eq('status', 'done')
-    .order('completed_at', { ascending: false })
-    .limit(1)
-    .single();
+  const lastSession = lastRes.data;
 
   // 4. If found, load its completed sets grouped by exercise
   type PrevSet = { exercise_id: string; set_number: number; actual_weight: number | null; actual_reps: number | null };

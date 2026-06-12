@@ -26,12 +26,18 @@ export async function setActivePlan(planId: string): Promise<void> {
   revalidatePath('/dashboard');
 }
 
-export async function deletePlan(planId: string): Promise<void> {
+/** Returned instead of thrown: server action error messages are redacted in production. */
+export type DeleteResult = { error?: 'HAS_SESSIONS' | 'UNKNOWN' };
+
+export async function deletePlan(planId: string): Promise<DeleteResult> {
   const supabase = createServerClient();
   const { error } = await supabase.from('training_plans').delete().eq('id', planId);
-  if (error) throw new Error(`Failed to delete plan: ${error.message}`);
+  // 23503: FK violation — workout_sessions reference the plan's days with ON DELETE RESTRICT
+  if (error?.code === '23503') return { error: 'HAS_SESSIONS' };
+  if (error) return { error: 'UNKNOWN' };
   revalidatePath('/plan');
   revalidatePath('/dashboard');
+  return {};
 }
 
 export async function createDayForPlan(planId: string, name: string): Promise<TrainingDay> {
@@ -54,11 +60,14 @@ export async function createDayForPlan(planId: string, name: string): Promise<Tr
   return data as TrainingDay;
 }
 
-export async function deleteDay(dayId: string): Promise<void> {
+export async function deleteDay(dayId: string): Promise<DeleteResult> {
   const supabase = createServerClient();
   const { error } = await supabase.from('training_days').delete().eq('id', dayId);
-  if (error) throw new Error(`Failed to delete day: ${error.message}`);
+  // 23503: FK violation — workout_sessions reference this day with ON DELETE RESTRICT
+  if (error?.code === '23503') return { error: 'HAS_SESSIONS' };
+  if (error) return { error: 'UNKNOWN' };
   revalidatePath('/plan');
+  return {};
 }
 
 export async function updateDayExercise(
@@ -107,6 +116,20 @@ export async function addDayExercise(
     planned_weight: plannedWeight,
   });
   if (error) throw new Error(`Failed to add exercise: ${error.message}`);
+  revalidatePath('/plan');
+}
+
+export async function updateDayExerciseOrders(
+  updates: { id: string; sort_order: number }[]
+): Promise<void> {
+  const supabase = createServerClient();
+  for (const u of updates) {
+    const { error } = await supabase
+      .from('day_exercises')
+      .update({ sort_order: u.sort_order })
+      .eq('id', u.id);
+    if (error) throw new Error(`Failed to reorder: ${error.message}`);
+  }
   revalidatePath('/plan');
 }
 

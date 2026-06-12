@@ -7,7 +7,7 @@ import {
   FrequencyChartClient,
 } from '@/components/stats-charts-client';
 import type { WeeklyVolumeRow, FrequencyRow } from '@/components/stats-charts';
-import { formatDate, weekStart } from '@/lib/utils';
+import { formatDate, toDateString, weekStart } from '@/lib/utils';
 
 const WEEKS_SHOWN = 8;
 const MAX_MUSCLE_KEYS = 6;
@@ -27,15 +27,12 @@ type MuscleRow = {
 };
 
 function lastWeekStarts(count: number): string[] {
-  const today = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-  const current = new Date(weekStart(todayStr) + 'T00:00:00');
+  const current = new Date(weekStart(toDateString(new Date())) + 'T00:00:00');
   const weeks: string[] = [];
   for (let i = count - 1; i >= 0; i--) {
     const d = new Date(current);
     d.setDate(d.getDate() - i * 7);
-    weeks.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    weeks.push(toDateString(d));
   }
   return weeks;
 }
