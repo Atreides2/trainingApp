@@ -74,7 +74,7 @@ export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen,
           step={2.5}
           suffix={isBodyweight ? '+kg' : 'kg'}
           compact
-          className="flex-1 min-w-[90px]"
+          className="flex-[1.4] min-w-0"
         />
 
         {/* Reps stepper */}
@@ -84,7 +84,7 @@ export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen,
           min={1}
           step={1}
           compact
-          className="w-[82px]"
+          className="flex-1 min-w-0"
         />
 
         {/* Done / reopen */}

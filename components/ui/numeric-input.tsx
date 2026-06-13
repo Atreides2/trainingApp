@@ -48,7 +48,7 @@ export function NumericInput({
       <button
         type="button"
         onClick={decrement}
-        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-accent active:text-white text-xl font-semibold select-none transition-colors', compact ? 'w-8' : 'w-10')}
+        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-accent active:text-white text-xl font-semibold select-none transition-colors', compact ? 'w-7' : 'w-10')}
       >
         −
       </button>
@@ -71,7 +71,7 @@ export function NumericInput({
         placeholder={placeholder}
         min={min}
         step={step}
-        className="flex-1 min-w-0 w-10 h-11 bg-transparent text-center text-ink text-lg font-bold tnum focus:outline-none"
+        className={cn('flex-1 min-w-0 w-8 h-11 bg-transparent text-center text-ink font-bold tnum focus:outline-none', compact ? 'text-base px-0.5' : 'text-lg')}
         suppressHydrationWarning
       />
       {suffix && (
@@ -80,7 +80,7 @@ export function NumericInput({
       <button
         type="button"
         onClick={increment}
-        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-accent active:text-white text-xl font-semibold select-none transition-colors', compact ? 'w-8' : 'w-10')}
+        className={cn('h-11 flex items-center justify-center text-gray-500 active:bg-accent active:text-white text-xl font-semibold select-none transition-colors', compact ? 'w-7' : 'w-10')}
       >
         +
       </button>
