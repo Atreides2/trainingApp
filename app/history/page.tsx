@@ -49,7 +49,7 @@ export default async function HistoryPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">History</h1>
+      <h1 className="h-display text-4xl text-ink">History</h1>
 
       {allSessions.length === 0 ? (
         <p className="text-sm text-gray-400 text-center py-10">
@@ -58,7 +58,7 @@ export default async function HistoryPage() {
       ) : (
         months.map((month) => (
           <section key={month.label}>
-            <h2 className="text-xs text-gray-500 uppercase tracking-wider mb-3">{month.label}</h2>
+            <h2 className="h-display text-xs text-gray-400 mb-3">{month.label}</h2>
             <div className="flex flex-col gap-2">
               {month.sessions.map((session) => (
                 <SessionRow

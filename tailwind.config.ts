@@ -11,6 +11,19 @@ const config: Config = {
       colors: {
         background: 'var(--background)',
         foreground: 'var(--foreground)',
+        accent: {
+          DEFAULT: '#2563EB',
+          dark: '#1D4ED8',
+          light: '#EFF4FF',
+        },
+        ink: {
+          DEFAULT: '#0B0F19',
+          soft: '#1F2530',
+        },
+      },
+      fontFamily: {
+        display: ['var(--font-display)', 'sans-serif'],
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
     },
   },

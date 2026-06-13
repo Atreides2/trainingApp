@@ -21,15 +21,16 @@ interface MuscleGroupTagsProps {
 }
 
 export function MuscleGroupTags({ primary, secondary = [], size = 'sm' }: MuscleGroupTagsProps) {
-  const textSize = size === 'xs' ? 'text-[10px]' : 'text-xs';
-  const padding = size === 'xs' ? 'px-1.5 py-0.5' : 'px-2 py-0.5';
+  const textSize = size === 'xs' ? 'text-[10px]' : 'text-[11px]';
+  const padding = size === 'xs' ? 'px-2 py-0.5' : 'px-2.5 py-0.5';
+  const base = `rounded-full font-display uppercase tracking-wide ${textSize} ${padding}`;
 
   return (
     <div className="flex flex-wrap gap-1">
       {primary.map((mg) => {
         const colors = SLUG_COLORS[mg.slug] ?? DEFAULT_COLORS;
         return (
-          <span key={mg.id} className={`rounded-full font-medium ${textSize} ${padding} ${colors.solid}`}>
+          <span key={mg.id} className={`${base} ${colors.solid}`}>
             {mg.name}
           </span>
         );
@@ -37,7 +38,7 @@ export function MuscleGroupTags({ primary, secondary = [], size = 'sm' }: Muscle
       {secondary.map((mg) => {
         const colors = SLUG_COLORS[mg.slug] ?? DEFAULT_COLORS;
         return (
-          <span key={mg.id} className={`rounded-full font-medium ${textSize} ${padding} ${colors.outline}`}>
+          <span key={mg.id} className={`${base} ${colors.outline}`}>
             {mg.name}
           </span>
         );

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { X, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -64,8 +65,8 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
       {deleteError && (
         <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2">
           <span>{deleteError}</span>
-          <button onClick={() => setDeleteError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
-            ✕
+          <button onClick={() => setDeleteError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0" aria-label="Dismiss">
+            <X size={16} />
           </button>
         </div>
       )}
@@ -74,24 +75,24 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
           key={plan.id}
           className={cn(
             'flex items-center justify-between gap-3 py-3 cursor-pointer',
-            selectedPlanId === plan.id && 'ring-2 ring-blue-500/30'
+            selectedPlanId === plan.id && 'ring-2 ring-accent/30'
           )}
           onClick={() => handleSelect(plan.id)}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm font-medium truncate">{plan.name}</span>
+            <span className="h-display text-sm text-ink truncate">{plan.name}</span>
             {plan.is_active && (
-              <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full border border-green-200 shrink-0">
+              <span className="font-display uppercase tracking-wide text-[10px] text-accent bg-accent-light px-2 py-0.5 rounded-full shrink-0">
                 Aktiv
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-3 shrink-0" onClick={(e) => e.stopPropagation()}>
             {!plan.is_active && (
               <button
                 onClick={() => handleSetActive(plan.id)}
                 disabled={isPending}
-                className="text-xs text-blue-600 disabled:opacity-50"
+                className="font-display uppercase tracking-wide text-xs text-accent disabled:opacity-50"
               >
                 Aktivieren
               </button>
@@ -100,7 +101,7 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
               <button
                 onClick={() => handleDelete(plan.id, plan.name)}
                 disabled={isPending}
-                className="text-xs text-red-400 disabled:opacity-50"
+                className="font-display uppercase tracking-wide text-xs text-red-400 disabled:opacity-50"
               >
                 Löschen
               </button>
@@ -121,15 +122,15 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
               if (e.key === 'Escape') { setShowNewInput(false); setNewName(''); }
             }}
             placeholder="Planname…"
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-accent transition-colors"
           />
           <Button onClick={handleCreate} disabled={isPending || !newName.trim()} size="md">
             Erstellen
           </Button>
           <Button
             onClick={() => { setShowNewInput(false); setNewName(''); }}
+            variant="secondary"
             size="md"
-            className="bg-gray-100 text-gray-700"
           >
             Abbrechen
           </Button>
@@ -137,10 +138,10 @@ export function PlanList({ plans, selectedPlanId }: PlanListProps) {
       ) : (
         <button
           onClick={() => setShowNewInput(true)}
-          className="text-sm text-blue-600 text-left py-2 disabled:opacity-50"
+          className="flex items-center gap-1 font-display uppercase tracking-wide text-sm text-accent text-left py-2 disabled:opacity-50"
           disabled={isPending}
         >
-          + Neuer Plan
+          <Plus size={15} strokeWidth={2.5} /> Neuer Plan
         </button>
       )}
     </div>

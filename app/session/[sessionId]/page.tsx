@@ -7,9 +7,11 @@ import { ExerciseCard } from '@/components/exercise-card';
 import { ExercisePicker } from '@/components/exercise-picker';
 import { SwapPicker } from '@/components/swap-picker';
 import { ScopeDialog } from '@/components/scope-dialog';
+import { X, Plus } from 'lucide-react';
 import { RestTimer } from '@/components/rest-timer';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ProgressBar } from '@/components/ui/progress-bar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/lib/utils';
 import {
@@ -475,13 +477,16 @@ export default function SessionPage({ params }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">{dayName}</h1>
-            <p className="text-sm text-gray-500">{completedSets}/{totalSets} sets done</p>
+            <h1 className="h-display text-3xl text-ink">{dayName}</h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              <span className="font-display text-ink tnum">{completedSets}</span>
+              <span className="text-gray-400">/{totalSets}</span> sets done
+            </p>
           </div>
           <button
             onClick={handleCancel}
             disabled={isCancelling}
-            className="h-10 px-3 text-sm text-gray-400 active:text-gray-600 transition-colors"
+            className="h-10 px-3 font-display uppercase tracking-wide text-sm text-gray-400 active:text-ink transition-colors"
           >
             Cancel
           </button>
@@ -491,19 +496,15 @@ export default function SessionPage({ params }: Props) {
         {actionError && (
           <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2">
             <span>{actionError}</span>
-            <button onClick={() => setActionError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
-              ✕
+            <button onClick={() => setActionError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0" aria-label="Dismiss">
+              <X size={16} />
             </button>
           </div>
         )}
 
         {/* Progress bar */}
-        <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-blue-600 rounded-full transition-all duration-500"
-            style={{ width: `${totalSets > 0 ? (completedSets / totalSets) * 100 : 0}%` }}
-          />
-        </div>
+        <ProgressBar value={completedSets} max={totalSets || 1} showPercent />
+
 
         {/* Empty session hint */}
         {exercises.length === 0 && (
@@ -531,9 +532,9 @@ export default function SessionPage({ params }: Props) {
         {/* Add exercise button */}
         <button
           onClick={openPicker}
-          className="w-full h-12 rounded-xl border-2 border-dashed border-gray-300 text-sm text-gray-400 active:border-blue-400 active:text-blue-500 transition-colors"
+          className="w-full h-12 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center gap-1.5 font-display uppercase tracking-wide text-sm text-gray-400 active:border-accent active:text-accent transition-colors"
         >
-          + Add exercise
+          <Plus size={16} strokeWidth={2.5} /> Add exercise
         </button>
       </div>
 
@@ -640,17 +641,17 @@ function ReadOnlySessionView({
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold">{session.dayName}</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="h-display text-3xl text-ink">{session.dayName}</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
             {formatDate(session.date)}
-            {totalVolume > 0 && ` · ${totalVolume.toLocaleString('en-US')} kg·reps`}
+            {totalVolume > 0 && <> · <span className="font-display text-ink tnum">{totalVolume.toLocaleString('en-US')}</span> kg·reps</>}
           </p>
         </div>
         <span
           className={
             session.status === 'done'
-              ? 'text-xs font-medium px-2.5 py-1 rounded-full bg-green-50 text-green-600 border border-green-200'
-              : 'text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 border border-gray-200'
+              ? 'font-display uppercase tracking-wide text-[10px] px-2.5 py-1 rounded-full bg-accent-light text-accent'
+              : 'font-display uppercase tracking-wide text-[10px] px-2.5 py-1 rounded-full bg-gray-100 text-gray-500'
           }
         >
           {session.status === 'done' ? 'Abgeschlossen' : 'Abgebrochen'}
@@ -662,12 +663,12 @@ function ReadOnlySessionView({
       ) : (
         completedByExercise.map((ex) => (
           <Card key={ex.exercise_id} className="flex flex-col gap-3">
-            <span className="text-base font-semibold text-gray-900">{ex.exercise_name}</span>
+            <span className="h-display text-lg text-ink">{ex.exercise_name}</span>
             <div className="flex flex-col gap-1.5">
               {ex.sets.map((set) => (
                 <div key={set.id} className="flex items-center justify-between text-sm">
-                  <span className="text-gray-400">Set {set.set_number}</span>
-                  <span className="text-gray-700">
+                  <span className="font-display text-gray-400">Set {set.set_number}</span>
+                  <span className="font-semibold text-ink tnum">
                     {ex.is_bodyweight && !set.actual_weight
                       ? 'BW'
                       : `${set.actual_weight ?? 0} kg`}

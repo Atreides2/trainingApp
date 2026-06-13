@@ -2,6 +2,7 @@
 
 import { useTransition } from 'react';
 import Link from 'next/link';
+import { Play, Plus, ArrowLeftRight, Trash2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { SetRow } from '@/components/set-row';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
@@ -46,10 +47,10 @@ export function ExerciseCard({
     <Card className="gap-4 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-1 min-w-0">
+        <div className="flex flex-col gap-1.5 min-w-0">
           <Link
             href={`/exercise/${exercise.exercise_id}`}
-            className="text-base font-semibold text-gray-900 active:text-blue-600 transition-colors truncate"
+            className="h-display text-lg text-ink active:text-accent transition-colors truncate"
           >
             {exercise.exercise_name}
           </Link>
@@ -62,11 +63,12 @@ export function ExerciseCard({
             href={`https://www.youtube.com/results?search_query=${encodeURIComponent(exercise.exercise_name + ' form tutorial')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1 px-2 py-1 rounded-full bg-red-50 text-red-500 text-xs font-medium active:bg-red-100 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-500 active:bg-red-100 transition-colors"
+            aria-label="Watch form tutorial on YouTube"
           >
-            ▶
+            <Play size={15} fill="currentColor" />
           </a>
-          <span className={cn('text-xs font-medium', allDone ? 'text-green-600' : 'text-gray-400')}>
+          <span className={cn('font-display text-sm tnum', allDone ? 'text-accent' : 'text-gray-400')}>
             {completedCount}/{totalCount}
           </span>
         </div>
@@ -98,25 +100,26 @@ export function ExerciseCard({
       <button
         onClick={handleAddSet}
         disabled={isPending}
-        className="w-full h-11 rounded-xl border border-dashed border-gray-300 text-sm text-gray-400 active:border-blue-400 active:text-blue-500 disabled:opacity-50 transition-colors"
+        className="w-full h-11 rounded-xl border border-dashed border-gray-300 flex items-center justify-center gap-1.5 font-display uppercase tracking-wide text-sm text-gray-400 active:border-accent active:text-accent disabled:opacity-50 transition-colors"
       >
-        {isPending ? '…' : '+ Add set'}
+        <Plus size={16} strokeWidth={2.5} />
+        {isPending ? 'Adding…' : 'Add set'}
       </button>
 
       {/* Swap / Remove exercise */}
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-5">
         <button
           onClick={() => onSwapExercise(exercise.exercise_id)}
-          className="py-1 text-xs text-gray-300 active:text-blue-400 transition-colors"
+          className="flex items-center gap-1.5 py-1 text-xs text-gray-400 active:text-accent transition-colors"
         >
-          ⇄ Swap exercise
+          <ArrowLeftRight size={13} /> Swap
         </button>
         <span className="text-gray-200 text-xs">·</span>
         <button
           onClick={() => onRemoveExercise(exercise.exercise_id)}
-          className="py-1 text-xs text-gray-300 active:text-red-400 transition-colors"
+          className="flex items-center gap-1.5 py-1 text-xs text-gray-400 active:text-red-500 transition-colors"
         >
-          Remove exercise
+          <Trash2 size={13} /> Remove
         </button>
       </div>
     </Card>

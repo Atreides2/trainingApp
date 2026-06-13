@@ -46,10 +46,10 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Trainingspläne</h1>
+      <h1 className="h-display text-4xl text-ink">Trainingspläne</h1>
 
       <section>
-        <h2 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Meine Pläne</h2>
+        <h2 className="h-display text-xs text-gray-400 mb-3">Meine Pläne</h2>
         <PlanList
           plans={allPlans}
           selectedPlanId={selectedPlan?.id ?? ''}
@@ -58,7 +58,7 @@ export default async function PlanPage({ searchParams }: PlanPageProps) {
 
       {selectedPlan && (
         <section>
-          <h2 className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+          <h2 className="h-display text-xs text-gray-400 mb-3">
             {selectedPlan.name} – Tage & Übungen
           </h2>
           <PlanEditor

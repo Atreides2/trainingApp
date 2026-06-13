@@ -2,6 +2,7 @@
 
 import { useOptimistic, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { ChevronUp, ChevronDown, ArrowLeftRight, X, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { NumericInput } from '@/components/ui/numeric-input';
 import { ExercisePicker } from '@/components/exercise-picker';
@@ -156,8 +157,8 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
       {dayError && (
         <div className="rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm px-3 py-2 flex items-center justify-between gap-2 -mt-4">
           <span>{dayError}</span>
-          <button onClick={() => setDayError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0">
-            ✕
+          <button onClick={() => setDayError(null)} className="text-red-400 active:text-red-600 px-1 shrink-0" aria-label="Dismiss">
+            <X size={16} />
           </button>
         </div>
       )}
@@ -168,13 +169,13 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
         return (
           <section key={day.id}>
             <div className="flex items-center justify-between mb-3">
-              <h2 className={`text-sm font-semibold uppercase tracking-wider ${DAY_ACCENT[day.name] ?? 'text-gray-400'}`}>
+              <h2 className={`h-display text-base ${DAY_ACCENT[day.name] ?? 'text-gray-400'}`}>
                 {day.name}
               </h2>
               <button
                 onClick={() => handleDeleteDay(day.id, day.name)}
                 disabled={isCreatingDay}
-                className="text-xs text-red-400 disabled:opacity-50"
+                className="font-display uppercase tracking-wide text-xs text-red-400 disabled:opacity-50"
                 title="Tag löschen"
               >
                 Tag löschen
@@ -204,9 +205,9 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
               <button
                 onClick={() => setPickerDayId(day.id)}
                 disabled={isAdding}
-                className="w-full py-3 text-sm text-gray-400 active:text-blue-500 border-t border-gray-100 transition-colors disabled:opacity-50"
+                className="w-full py-3 flex items-center justify-center gap-1.5 font-display uppercase tracking-wide text-sm text-gray-400 active:text-accent border-t border-gray-100 transition-colors disabled:opacity-50"
               >
-                + Add exercise
+                <Plus size={15} strokeWidth={2.5} /> Add exercise
               </button>
             </Card>
 
@@ -247,18 +248,18 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
               if (e.key === 'Escape') { setShowNewDay(false); setNewDayName(''); }
             }}
             placeholder="Tag-Name (z.B. Ganzkörper A)…"
-            className="flex-1 text-sm border border-gray-300 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 outline-none focus:border-accent transition-colors"
           />
           <button
             onClick={handleCreateDay}
             disabled={isCreatingDay || !newDayName.trim()}
-            className="text-sm text-blue-600 disabled:opacity-50 px-3"
+            className="font-display uppercase tracking-wide text-sm text-accent disabled:opacity-50 px-3"
           >
             Erstellen
           </button>
           <button
             onClick={() => { setShowNewDay(false); setNewDayName(''); }}
-            className="text-sm text-gray-400 px-3"
+            className="font-display uppercase tracking-wide text-sm text-gray-400 px-3"
           >
             Abbrechen
           </button>
@@ -267,9 +268,9 @@ export function PlanEditor({ planId, days, dayExercises, allExercises, exercises
         <button
           onClick={() => setShowNewDay(true)}
           disabled={isCreatingDay}
-          className="text-sm text-blue-600 text-left py-1 disabled:opacity-50"
+          className="flex items-center gap-1 font-display uppercase tracking-wide text-sm text-accent text-left py-1 disabled:opacity-50"
         >
-          + Tag hinzufügen
+          <Plus size={15} strokeWidth={2.5} /> Tag hinzufügen
         </button>
       )}
     </div>
@@ -317,47 +318,47 @@ function PlanRow({
       {/* Row 1: exercise name + action buttons */}
       <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
         <div className="flex-1 min-w-0">
-          <span className="text-sm text-gray-900 truncate block">{de.exercise?.name}</span>
-          {isPending && <span className="text-xs text-gray-400">Speichern…</span>}
-          {!isPending && savedFlash && <span className="text-xs text-green-500">Gespeichert</span>}
+          <span className="text-sm font-medium text-ink truncate block">{de.exercise?.name}</span>
+          {isPending && <span className="font-display uppercase tracking-wide text-[10px] text-gray-400">Speichern…</span>}
+          {!isPending && savedFlash && <span className="font-display uppercase tracking-wide text-[10px] text-accent">Gespeichert</span>}
         </div>
         <button
           onClick={onMoveUp}
           disabled={isPending || !onMoveUp}
-          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-xs disabled:opacity-30"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-accent transition-colors disabled:opacity-30"
           title="Nach oben"
         >
-          ▲
+          <ChevronUp size={16} />
         </button>
         <button
           onClick={onMoveDown}
           disabled={isPending || !onMoveDown}
-          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-xs disabled:opacity-30"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-accent transition-colors disabled:opacity-30"
           title="Nach unten"
         >
-          ▼
+          <ChevronDown size={16} />
         </button>
         <button
           onClick={onSwap}
           disabled={isPending}
-          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-blue-500 transition-colors text-base disabled:opacity-50"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-accent transition-colors disabled:opacity-50"
           title="Swap exercise"
         >
-          ⇄
+          <ArrowLeftRight size={15} />
         </button>
         <button
           onClick={handleRemove}
           disabled={isPending}
-          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-red-500 transition-colors text-lg disabled:opacity-50"
+          className="w-7 h-7 flex items-center justify-center text-gray-400 active:text-red-500 transition-colors disabled:opacity-50"
           title="Remove exercise from day"
         >
-          ×
+          <X size={16} />
         </button>
       </div>
       {/* Row 2: labeled numeric inputs */}
       <div className="flex gap-2 px-4 pb-3">
         <div className="flex-1 flex flex-col gap-0.5">
-          <span className="text-[10px] text-gray-400 text-center">Sätze</span>
+          <span className="font-display uppercase tracking-wide text-[10px] text-gray-400 text-center">Sätze</span>
           <NumericInput
             value={de.planned_sets}
             onChange={(v) => handleChange('planned_sets', v)}
@@ -367,7 +368,7 @@ function PlanRow({
           />
         </div>
         <div className="flex-1 flex flex-col gap-0.5">
-          <span className="text-[10px] text-gray-400 text-center">Wdh.</span>
+          <span className="font-display uppercase tracking-wide text-[10px] text-gray-400 text-center">Wdh.</span>
           <NumericInput
             value={de.planned_reps}
             onChange={(v) => handleChange('planned_reps', v)}
@@ -377,7 +378,7 @@ function PlanRow({
           />
         </div>
         <div className="flex-1 flex flex-col gap-0.5">
-          <span className="text-[10px] text-gray-400 text-center">Gewicht</span>
+          <span className="font-display uppercase tracking-wide text-[10px] text-gray-400 text-center">Gewicht</span>
           <NumericInput
             value={de.planned_weight}
             onChange={(v) => handleChange('planned_weight', v)}

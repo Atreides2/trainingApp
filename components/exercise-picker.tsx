@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { Exercise } from '@/lib/types';
 
 interface ExercisePickerProps {
@@ -30,12 +31,13 @@ export function ExercisePicker({ exercises, excludeIds, onSelect, onClose }: Exe
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl max-h-[70vh] flex flex-col">
         {/* Handle + header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
-          <h2 className="text-base font-semibold text-gray-900">Add Exercise</h2>
+          <h2 className="h-display text-xl text-ink">Add Exercise</h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-gray-400 active:text-gray-600 text-xl"
+            className="w-8 h-8 flex items-center justify-center text-gray-400 active:text-ink"
+            aria-label="Close"
           >
-            ×
+            <X size={20} />
           </button>
         </div>
 
@@ -47,7 +49,7 @@ export function ExercisePicker({ exercises, excludeIds, onSelect, onClose }: Exe
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search exercises…"
             autoFocus
-            className="w-full h-10 px-3 rounded-lg bg-gray-100 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:border-blue-400"
+            className="w-full h-10 px-3 rounded-xl bg-gray-50 border border-gray-200 text-ink text-sm focus:outline-none focus:border-accent focus:bg-white transition-colors"
           />
         </div>
 
@@ -64,9 +66,9 @@ export function ExercisePicker({ exercises, excludeIds, onSelect, onClose }: Exe
                 onClick={() => onSelect(ex)}
                 className="w-full text-left px-4 py-3.5 border-b border-gray-100 last:border-0 active:bg-gray-50 transition-colors"
               >
-                <span className="text-sm font-medium text-gray-900">{ex.name}</span>
+                <span className="text-sm font-semibold text-ink">{ex.name}</span>
                 {ex.is_bodyweight && (
-                  <span className="ml-2 text-xs text-gray-400">bodyweight</span>
+                  <span className="ml-2 font-display uppercase tracking-wide text-[10px] text-gray-400">bodyweight</span>
                 )}
               </button>
             ))

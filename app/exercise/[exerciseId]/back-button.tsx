@@ -1,15 +1,16 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 
 export function BackButton() {
   const router = useRouter();
   return (
     <button
       onClick={() => router.back()}
-      className="text-xs text-gray-400 active:text-gray-600 transition-colors"
+      className="flex items-center gap-1 font-display uppercase tracking-wide text-xs text-gray-400 active:text-ink transition-colors"
     >
-      ← Zurück
+      <ArrowLeft size={14} /> Zurück
     </button>
   );
 }

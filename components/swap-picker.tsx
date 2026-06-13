@@ -40,8 +40,8 @@ export function SwapPicker({ exerciseId, exerciseName, excludeIds, onSelect, onC
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl flex flex-col max-h-[75vh]">
         {/* Header */}
         <div className="px-4 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
-          <p className="text-xs text-gray-400 uppercase tracking-wider mb-0.5">Swap exercise</p>
-          <p className="text-base font-semibold text-gray-900">{exerciseName}</p>
+          <p className="h-display text-xs text-gray-400 mb-0.5">Swap exercise</p>
+          <p className="h-display text-lg text-ink">{exerciseName}</p>
         </div>
 
         {/* Search */}
@@ -52,7 +52,7 @@ export function SwapPicker({ exerciseId, exerciseName, excludeIds, onSelect, onC
             placeholder="Search…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full h-10 px-3 rounded-xl bg-gray-100 text-sm text-gray-900 placeholder-gray-400 outline-none"
+            className="w-full h-10 px-3 rounded-xl bg-gray-50 border border-gray-200 text-sm text-ink placeholder-gray-400 outline-none focus:border-accent focus:bg-white transition-colors"
           />
         </div>
 
@@ -69,7 +69,7 @@ export function SwapPicker({ exerciseId, exerciseName, excludeIds, onSelect, onC
                 onClick={() => onSelect(ex)}
                 className="w-full px-4 py-3 text-left border-b border-gray-50 active:bg-gray-50 transition-colors last:border-0"
               >
-                <p className="text-sm font-medium text-gray-900">{ex.name}</p>
+                <p className="text-sm font-semibold text-ink">{ex.name}</p>
                 <div className="mt-1">
                   <MuscleGroupTags
                     primary={ex.primary_muscles}

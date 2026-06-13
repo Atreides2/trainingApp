@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
+import { ArrowRight } from 'lucide-react';
 import { createServerClient } from '@/lib/supabase/server';
 import { DayCard } from '@/components/day-card';
 import { SessionRow } from '@/components/session-row';
@@ -89,27 +90,27 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <h1 className="h-display text-4xl text-ink">Dashboard</h1>
 
       {/* Active session whose day is not in the current plan would otherwise be unreachable */}
       {activeSession && !activeDayInPlan && (
         <Link href={`/session/${activeSession.id}`}>
-          <Card className="flex items-center justify-between py-3 ring-2 ring-green-400/60">
-            <div>
-              <span className="font-medium text-sm">
+          <Card className="flex items-center justify-between py-3 ring-2 ring-accent">
+            <div className="flex items-baseline gap-2">
+              <span className="h-display text-sm text-ink">
                 {activeSession.training_day?.name ?? 'Workout'}
               </span>
-              <span className="text-xs text-gray-500 ml-2">{formatDate(activeSession.date)}</span>
-              <span className="text-xs text-green-600 font-medium ml-2">Aktiv</span>
+              <span className="text-xs text-gray-500">{formatDate(activeSession.date)}</span>
+              <span className="font-display uppercase tracking-wide text-[10px] text-accent px-2 py-0.5 rounded-full bg-accent-light">Active</span>
             </div>
-            <span className="text-sm font-semibold text-green-600">Resume →</span>
+            <span className="flex items-center gap-1 font-display uppercase tracking-wide text-sm text-accent">Resume <ArrowRight size={15} /></span>
           </Card>
         </Link>
       )}
 
       {/* Training days */}
       <section>
-        <h2 className="text-xs text-gray-500 uppercase tracking-wider mb-3">Start a session</h2>
+        <h2 className="h-display text-xs text-gray-400 mb-3">Start a session</h2>
         <div className="flex flex-col gap-2">
           {days.map((day) => {
             const isToday = day.id === todaysSuggestion.id;
@@ -133,9 +134,9 @@ export default async function DashboardPage() {
       {recentSessions && recentSessions.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-xs text-gray-500 uppercase tracking-wider">Recent sessions</h2>
-            <Link href="/history" className="text-xs text-blue-600 font-medium">
-              Alle anzeigen →
+            <h2 className="h-display text-xs text-gray-400">Recent sessions</h2>
+            <Link href="/history" className="flex items-center gap-1 font-display uppercase tracking-wide text-xs text-accent">
+              View all <ArrowRight size={13} />
             </Link>
           </div>
           <div className="flex flex-col gap-2">

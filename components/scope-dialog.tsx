@@ -24,25 +24,25 @@ export function ScopeDialog({
 
       {/* Bottom sheet */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl px-4 pt-5 pb-8">
-        <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">{verb} exercise</p>
-        <p className="text-base font-semibold text-gray-900 mb-5">{exerciseName}</p>
+        <p className="h-display text-xs text-gray-400 mb-1">{verb} exercise</p>
+        <p className="h-display text-lg text-ink mb-5">{exerciseName}</p>
 
         <div className="flex flex-col gap-3">
           <button
             onClick={onSessionOnly}
-            className="w-full h-13 py-3.5 rounded-xl bg-blue-600 text-white font-semibold text-sm active:bg-blue-700 transition-colors"
+            className="w-full py-3.5 rounded-xl bg-accent text-white font-display uppercase tracking-wide text-sm active:bg-accent-dark active:scale-[0.98] transition-all"
           >
             Just this session
           </button>
           <button
             onClick={onSessionAndFuture}
-            className="w-full h-13 py-3.5 rounded-xl bg-gray-100 text-gray-700 font-semibold text-sm active:bg-gray-200 transition-colors"
+            className="w-full py-3.5 rounded-xl bg-ink text-white font-display uppercase tracking-wide text-sm active:bg-ink-soft active:scale-[0.98] transition-all"
           >
             Future workouts too
           </button>
           <button
             onClick={onCancel}
-            className="w-full py-3 text-sm text-gray-400 active:text-gray-600"
+            className="w-full py-3 font-display uppercase tracking-wide text-sm text-gray-400 active:text-ink"
           >
             Cancel
           </button>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { Check, Minus } from 'lucide-react';
 import { NumericInput } from '@/components/ui/numeric-input';
 import { cn } from '@/lib/utils';
 import type { SessionSet } from '@/lib/types';
@@ -46,7 +47,7 @@ export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen,
     <div
       className={cn(
         'rounded-xl px-3 py-3 transition-colors',
-        set.completed ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+        set.completed ? 'bg-accent-light border border-accent/30' : 'bg-gray-50 border border-gray-200'
       )}
     >
       <div className="flex items-center gap-2">
@@ -54,13 +55,13 @@ export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen,
         <button
           onClick={handleRemove}
           disabled={isPending}
-          className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-400 active:bg-red-200 disabled:opacity-50 shrink-0 text-lg leading-none"
+          className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center text-red-500 active:bg-red-200 disabled:opacity-50 shrink-0"
         >
-          −
+          <Minus size={15} strokeWidth={2.5} />
         </button>
 
         {/* Set number */}
-        <span className="text-sm text-gray-400 w-5 text-center shrink-0 font-medium">
+        <span className="font-display text-sm text-gray-400 w-5 text-center shrink-0 tnum">
           {displayNumber}
         </span>
 
@@ -91,15 +92,15 @@ export function SetRow({ set, displayNumber, isBodyweight, onComplete, onReopen,
           <button
             onClick={handleReopen}
             disabled={isPending}
-            className="w-11 h-11 rounded-xl bg-green-500 flex items-center justify-center text-white text-lg active:bg-green-600 disabled:opacity-50 shrink-0"
+            className="w-11 h-11 rounded-xl bg-accent flex items-center justify-center text-white active:bg-accent-dark disabled:opacity-50 shrink-0"
           >
-            ✓
+            <Check size={20} strokeWidth={3} />
           </button>
         ) : (
           <button
             onClick={handleComplete}
             disabled={isPending || reps == null}
-            className="h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold active:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="h-11 px-4 rounded-xl bg-ink text-white font-display uppercase tracking-wide text-sm active:bg-ink-soft disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
             Done
           </button>

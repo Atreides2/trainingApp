@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ChevronRight, Plus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { MuscleGroupTags } from '@/components/muscle-group-tags';
 import { ExerciseForm } from './exercise-form';
@@ -34,17 +35,17 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search exercises…"
-        className="w-full h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-blue-400 transition-colors"
+        className="w-full h-11 px-4 rounded-xl bg-white border border-gray-200 text-sm text-ink placeholder-gray-400 outline-none focus:border-accent transition-colors"
       />
 
       {/* Header row */}
       <div className="flex items-center justify-between">
-        <h2 className="text-xs text-gray-500 uppercase tracking-wider">Übungen</h2>
+        <h2 className="h-display text-xs text-gray-400">Übungen</h2>
         <button
           onClick={() => setShowForm(true)}
-          className="text-sm text-blue-600 font-medium active:text-blue-700"
+          className="flex items-center gap-1 font-display uppercase tracking-wide text-sm text-accent active:text-accent-dark"
         >
-          + Neue Übung
+          <Plus size={15} strokeWidth={2.5} /> Neue Übung
         </button>
       </div>
 
@@ -52,8 +53,8 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <button
           onClick={() => setFilter(null)}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-            filter === null ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full font-display uppercase tracking-wide text-xs transition-colors ${
+            filter === null ? 'bg-accent text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
           }`}
         >
           All
@@ -62,8 +63,8 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
           <button
             key={mg.id}
             onClick={() => setFilter(filter === mg.id ? null : mg.id)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              filter === mg.id ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full font-display uppercase tracking-wide text-xs transition-colors ${
+              filter === mg.id ? 'bg-accent text-white' : 'bg-gray-100 text-gray-600 active:bg-gray-200'
             }`}
           >
             {mg.name}
@@ -84,15 +85,15 @@ export function ExerciseLibrary({ exercises, muscleGroups }: ExerciseLibraryProp
                 i % 2 === 0 ? '' : 'bg-gray-50/50'
               }`}
             >
-              <div className="flex flex-col gap-1 min-w-0">
-                <span className="text-sm font-medium text-gray-900">{ex.name}</span>
+              <div className="flex flex-col gap-1.5 min-w-0">
+                <span className="text-sm font-semibold text-ink">{ex.name}</span>
                 <MuscleGroupTags
                   primary={ex.primary_muscles}
                   secondary={ex.secondary_muscles}
                   size="xs"
                 />
               </div>
-              <span className="text-gray-300 ml-3 flex-shrink-0">›</span>
+              <ChevronRight size={16} className="text-gray-300 ml-3 flex-shrink-0" />
             </Link>
           ))
         )}

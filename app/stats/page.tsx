@@ -163,7 +163,7 @@ export default async function StatsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">Stats</h1>
+      <h1 className="h-display text-4xl text-ink">Stats</h1>
 
       {!hasAnyData ? (
         <p className="text-sm text-gray-400 text-center py-10">
@@ -172,35 +172,35 @@ export default async function StatsPage() {
       ) : (
         <>
           <Card>
-            <h2 className="text-sm font-semibold text-gray-500 mb-4">
+            <h2 className="h-display text-xs text-gray-400 mb-4">
               Weekly Volume by Muscle Group
             </h2>
             <WeeklyVolumeChartClient data={weeklyVolumeData} muscleKeys={muscleKeys} />
           </Card>
 
           <Card>
-            <h2 className="text-sm font-semibold text-gray-500 mb-4">Sessions per Week</h2>
+            <h2 className="h-display text-xs text-gray-400 mb-4">Sessions per Week</h2>
             <FrequencyChartClient data={frequencyData} />
           </Card>
 
           {prs.length > 0 && (
             <section>
-              <h2 className="text-xs text-gray-400 uppercase tracking-wider mb-3">
+              <h2 className="h-display text-xs text-gray-400 mb-3">
                 Personal Records
               </h2>
               <Card className="p-0 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100">
-                      <th className="text-left text-xs text-gray-400 px-4 py-2">Exercise</th>
-                      <th className="text-right text-xs text-gray-400 px-4 py-2">Best</th>
+                      <th className="h-display text-left text-[11px] text-gray-400 px-4 py-2.5">Exercise</th>
+                      <th className="h-display text-right text-[11px] text-gray-400 px-4 py-2.5">Best</th>
                     </tr>
                   </thead>
                   <tbody>
                     {prs.map((pr, i) => (
                       <tr key={pr.name} className={i % 2 === 0 ? 'bg-transparent' : 'bg-gray-50'}>
-                        <td className="px-4 py-2 text-gray-900">{pr.name}</td>
-                        <td className="px-4 py-2 text-right text-gray-700">
+                        <td className="px-4 py-2.5 text-ink">{pr.name}</td>
+                        <td className="px-4 py-2.5 text-right font-semibold text-ink tnum">
                           {pr.isBodyweight
                             ? pr.bestWeight > 0
                               ? `BW +${pr.bestWeight} kg × ${pr.repsAtBestWeight}`

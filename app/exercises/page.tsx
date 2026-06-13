@@ -13,7 +13,7 @@ export default async function ExercisesPage() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Exercises</h1>
+        <h1 className="h-display text-4xl text-ink">Exercises</h1>
       </div>
       <ExerciseLibrary exercises={exercises} muscleGroups={muscleGroups} />
     </div>
